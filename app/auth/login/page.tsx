@@ -26,20 +26,16 @@ export default function LoginPage() {
     setError(null)
 
     const redirectTo = `${window.location.origin}/auth/callback`
-    console.log("[v0] OAuth login attempt:", { provider, redirectTo, origin: window.location.origin })
 
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
-          skipBrowserRedirect: false,
         },
       })
-      console.log("[v0] OAuth response:", { data, error })
       if (error) throw error
     } catch (err: unknown) {
-      console.log("[v0] OAuth error:", err)
       setError(err instanceof Error ? err.message : 'An error occurred')
       setIsLoading(null)
     }
