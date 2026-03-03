@@ -14,7 +14,6 @@ import type { Provider } from '@supabase/supabase-js'
 
 const PROVIDERS: { name: string; provider: Provider }[] = [
   { name: 'Discord', provider: 'discord' },
-  { name: 'Google', provider: 'google' },
 ]
 
 export default function LoginPage() {
