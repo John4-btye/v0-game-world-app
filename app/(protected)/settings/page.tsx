@@ -40,7 +40,7 @@ export default function SettingsPage() {
           Linked Accounts
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Manage your Discord, Google, and Reddit connections.
+          Manage your Discord and Google connections.
         </p>
       </section>
     </div>

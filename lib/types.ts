@@ -13,7 +13,6 @@ export interface Profile {
   is_over_16: boolean
   linked_discord: string | null
   linked_google: string | null
-  linked_reddit: string | null
   created_at: string
   updated_at: string
 }

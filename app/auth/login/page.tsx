@@ -15,9 +15,6 @@ import type { Provider } from '@supabase/supabase-js'
 const PROVIDERS: { name: string; provider: Provider }[] = [
   { name: 'Discord', provider: 'discord' },
   { name: 'Google', provider: 'google' },
-  // Note: To enable Reddit, add it to Supabase Auth providers.
-  // Supabase doesn't have a built-in Reddit provider — you would use a
-  // custom OIDC provider or keep it as a future addition.
 ]
 
 export default function LoginPage() {

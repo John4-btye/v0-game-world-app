@@ -30,7 +30,7 @@ export default function ProfilePage() {
           Linked Accounts
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Discord, Google, and Reddit account links will be shown here.
+          Discord and Google account links will be shown here.
         </p>
       </section>
     </div>
