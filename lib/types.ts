@@ -25,10 +25,12 @@ export interface Community {
   description: string | null
   icon_url: string | null
   banner_url: string | null
-  game_tags: string[] // text[]
+  game_tags: string[]
+  platforms: string[]
   is_nsfw: boolean
-  owner_id: string
+  created_by: string | null
   created_at: string
+  member_count?: number // virtual, from aggregation
 }
 
 // --- Community Members ---
