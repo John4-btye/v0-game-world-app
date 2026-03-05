@@ -12,26 +12,33 @@ export async function TopBar() {
   const displayName = meta.full_name || meta.name || 'Gamer'
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
-      <div className="text-sm font-semibold text-foreground">
-        Game-World
+    <header className="flex h-12 items-center justify-between border-b border-border bg-card/60 backdrop-blur-sm px-4">
+      {/* Breadcrumb area */}
+      <div className="flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+        <span className="text-xs font-medium text-muted-foreground">Online</span>
       </div>
+
+      {/* User pill */}
       <div className="flex items-center gap-3">
         {user && (
-          <Link href="/profile" className="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity">
+          <Link
+            href="/profile"
+            className="flex items-center gap-2.5 rounded-full border border-border bg-secondary/50 py-1 pl-1 pr-3 transition-colors hover:border-primary/40 hover:bg-secondary"
+          >
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={`${displayName}'s avatar`}
-                className="h-8 w-8 rounded-full object-cover border border-border"
+                className="h-7 w-7 rounded-full object-cover ring-1 ring-primary/30"
                 crossOrigin="anonymous"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary ring-1 ring-primary/30">
                 {displayName[0]?.toUpperCase()}
               </div>
             )}
-            <span className="hidden text-sm font-medium text-foreground md:inline">
+            <span className="hidden text-xs font-medium text-foreground md:inline">
               {displayName}
             </span>
           </Link>

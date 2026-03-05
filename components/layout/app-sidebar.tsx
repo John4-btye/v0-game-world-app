@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
@@ -65,32 +66,44 @@ export function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-full w-16 flex-col border-r border-sidebar-border bg-sidebar py-4 md:w-56">
+    <aside className="flex h-full w-16 flex-col border-r border-sidebar-border bg-sidebar md:w-60">
       {/* Brand */}
       <Link
         href="/dashboard"
-        className="mb-6 flex items-center gap-2 px-4 text-lg font-bold text-sidebar-primary"
+        className="flex items-center gap-3 border-b border-sidebar-border px-3 py-4 md:px-4"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground">
-          GW
+        <Image
+          src="/images/logo.png"
+          alt="Game-World"
+          width={36}
+          height={36}
+          className="shrink-0 rounded-lg"
+        />
+        <span className="hidden text-lg font-bold tracking-tight text-sidebar-foreground md:inline"
+          style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
+        >
+          Game-World
         </span>
-        <span className="hidden md:inline">Game-World</span>
       </Link>
 
       {/* Navigation */}
-      <nav className="flex flex-1 flex-col gap-1 px-2">
+      <nav className="flex flex-1 flex-col gap-1 px-2 py-3">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 isActive
-                  ? 'bg-sidebar-accent text-sidebar-primary'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                  ? 'bg-primary/15 text-primary shadow-[inset_0_0_0_1px] shadow-primary/20'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
               }`}
             >
+              {/* Active indicator bar */}
+              {isActive && (
+                <span className="absolute -left-2 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+              )}
               <span className="shrink-0">{item.icon}</span>
               <span className="hidden md:inline">{item.label}</span>
             </Link>
@@ -98,10 +111,10 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Bottom brand mark */}
-      <div className="px-4 pt-4 border-t border-sidebar-border">
-        <p className="hidden md:block text-[10px] text-sidebar-foreground/40 text-center">
-          Game-World v0.1
+      {/* Bottom */}
+      <div className="border-t border-sidebar-border px-3 py-3">
+        <p className="hidden text-center text-[10px] font-medium text-sidebar-foreground/30 md:block">
+          Game-World v1.0
         </p>
       </div>
     </aside>
