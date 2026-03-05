@@ -40,12 +40,12 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="flex flex-col items-center gap-6">
           {/* Logo */}
-          <span className="relative h-20 w-20">
+          <span className="relative h-24 w-24">
             <Image
-              src="/images/logo.png"
+              src="/images/logo.jpg"
               alt="Game-World"
               fill
-              className="object-contain drop-shadow-[0_0_30px_oklch(0.62_0.24_260/0.25)]"
+              className="rounded-xl object-cover drop-shadow-[0_0_30px_oklch(0.62_0.24_260/0.25)]"
               priority
             />
           </span>

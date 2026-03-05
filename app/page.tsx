@@ -24,12 +24,12 @@ export default async function LandingPage() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 text-center">
         {/* Logo */}
-        <span className="relative h-[140px] w-[140px]">
+        <span className="relative h-[200px] w-[200px]">
           <Image
-            src="/images/logo.png"
+            src="/images/logo.jpg"
             alt="Game-World"
             fill
-            className="object-contain drop-shadow-[0_0_40px_oklch(0.62_0.24_260/0.3)]"
+            className="rounded-2xl object-cover drop-shadow-[0_0_60px_oklch(0.62_0.24_260/0.4)]"
             priority
           />
         </span>

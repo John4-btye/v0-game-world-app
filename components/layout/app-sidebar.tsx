@@ -72,12 +72,12 @@ export function AppSidebar() {
         href="/dashboard"
         className="flex items-center gap-3 border-b border-sidebar-border px-3 py-4 md:px-4"
       >
-        <span className="relative h-9 w-9 shrink-0">
+        <span className="relative h-10 w-10 shrink-0">
           <Image
-            src="/images/logo.png"
+            src="/images/logo.jpg"
             alt="Game-World"
             fill
-            className="rounded-lg object-contain"
+            className="rounded-lg object-cover"
           />
         </span>
         <span className="hidden text-lg font-bold tracking-tight text-sidebar-foreground md:inline"

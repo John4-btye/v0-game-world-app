@@ -1,13 +1,17 @@
 import sharp from 'sharp';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const inputPath = path.join(__dirname, '..', 'public', 'images', 'logo.png');
-const outputPath = inputPath; // overwrite
+const logoUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Game-World%20Logo%20-DXg3futH75lpNTcWOfEiVVCLYr1Fff.png';
+const outputPath = '/home/user/logo-transparent.png';
+
+console.log('Fetching logo from blob...');
+const response = await fetch(logoUrl);
+const arrayBuffer = await response.arrayBuffer();
+const inputBuffer = Buffer.from(arrayBuffer);
+console.log('Downloaded', inputBuffer.length, 'bytes');
 
 async function removeBg() {
-  const image = sharp(inputPath);
+  const image = sharp(inputBuffer);
   const { data, info } = await image.raw().ensureAlpha().toBuffer({ resolveWithObject: true });
 
   const threshold = 240; // pixels near white
@@ -22,11 +26,14 @@ async function removeBg() {
     }
   }
 
-  await sharp(pixels, { raw: { width: info.width, height: info.height, channels: 4 } })
+  const outputBuffer = await sharp(pixels, { raw: { width: info.width, height: info.height, channels: 4 } })
     .png()
-    .toFile(outputPath);
+    .toBuffer();
 
-  console.log(`Done! Saved transparent logo (${info.width}x${info.height}) to ${outputPath}`);
+  // Write to local fs so we can verify, and also output base64 for piping back
+  fs.writeFileSync(outputPath, outputBuffer);
+  console.log(`Done! Transparent logo (${info.width}x${info.height}), ${outputBuffer.length} bytes`);
+  console.log(`DATA_URL:data:image/png;base64,${outputBuffer.toString('base64')}`);
 }
 
 removeBg().catch(console.error);
