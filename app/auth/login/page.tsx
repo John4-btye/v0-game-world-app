@@ -40,15 +40,15 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="flex flex-col items-center gap-6">
           {/* Logo */}
-          <Image
-            src="/images/logo.png"
-            alt="Game-World"
-            width={80}
-            height={80}
-            style={{ width: 'auto', height: 'auto' }}
-            className="max-h-20 drop-shadow-[0_0_30px_oklch(0.62_0.24_260/0.25)]"
-            priority
-          />
+          <span className="relative h-20 w-20">
+            <Image
+              src="/images/logo.png"
+              alt="Game-World"
+              fill
+              className="object-contain drop-shadow-[0_0_30px_oklch(0.62_0.24_260/0.25)]"
+              priority
+            />
+          </span>
 
           {/* Card */}
           <div className="w-full rounded-xl border border-border bg-card/80 p-6 shadow-xl shadow-primary/5 backdrop-blur-sm">

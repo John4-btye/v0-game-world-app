@@ -24,15 +24,15 @@ export default async function LandingPage() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 text-center">
         {/* Logo */}
-        <Image
-          src="/images/logo.png"
-          alt="Game-World"
-          width={140}
-          height={140}
-          style={{ width: 'auto', height: 'auto' }}
-          className="max-h-[140px] drop-shadow-[0_0_40px_oklch(0.62_0.24_260/0.3)]"
-          priority
-        />
+        <span className="relative h-[140px] w-[140px]">
+          <Image
+            src="/images/logo.png"
+            alt="Game-World"
+            fill
+            className="object-contain drop-shadow-[0_0_40px_oklch(0.62_0.24_260/0.3)]"
+            priority
+          />
+        </span>
 
         {/* Heading */}
         <div className="flex flex-col gap-3">

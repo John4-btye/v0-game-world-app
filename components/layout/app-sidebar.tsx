@@ -72,14 +72,14 @@ export function AppSidebar() {
         href="/dashboard"
         className="flex items-center gap-3 border-b border-sidebar-border px-3 py-4 md:px-4"
       >
-        <Image
-          src="/images/logo.png"
-          alt="Game-World"
-          width={36}
-          height={36}
-          style={{ width: 'auto', height: 'auto' }}
-          className="max-h-9 shrink-0 rounded-lg object-contain"
-        />
+        <span className="relative h-9 w-9 shrink-0">
+          <Image
+            src="/images/logo.png"
+            alt="Game-World"
+            fill
+            className="rounded-lg object-contain"
+          />
+        </span>
         <span className="hidden text-lg font-bold tracking-tight text-sidebar-foreground md:inline"
           style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
         >
