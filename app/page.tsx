@@ -29,7 +29,8 @@ export default async function LandingPage() {
           alt="Game-World"
           width={140}
           height={140}
-          className="h-[140px] w-auto drop-shadow-[0_0_40px_oklch(0.62_0.24_260/0.3)]"
+          style={{ width: 'auto', height: 'auto' }}
+          className="max-h-[140px] drop-shadow-[0_0_40px_oklch(0.62_0.24_260/0.3)]"
           priority
         />
 
