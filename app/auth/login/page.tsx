@@ -45,7 +45,7 @@ export default function LoginPage() {
             alt="Game-World"
             width={80}
             height={80}
-            className="drop-shadow-[0_0_30px_oklch(0.62_0.24_260/0.25)]"
+            className="h-20 w-auto drop-shadow-[0_0_30px_oklch(0.62_0.24_260/0.25)]"
             priority
           />
 

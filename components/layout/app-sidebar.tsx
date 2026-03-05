@@ -77,7 +77,7 @@ export function AppSidebar() {
           alt="Game-World"
           width={36}
           height={36}
-          className="shrink-0 rounded-lg"
+          className="h-9 w-9 shrink-0 rounded-lg object-contain"
         />
         <span className="hidden text-lg font-bold tracking-tight text-sidebar-foreground md:inline"
           style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
