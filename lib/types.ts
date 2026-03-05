@@ -45,15 +45,12 @@ export interface CommunityMember {
 }
 
 // --- Channels ---
-export type ChannelType = 'text' | 'voice' | 'announcement'
-
 export interface Channel {
   id: string
   community_id: string
   name: string
   description: string | null
-  channel_type: ChannelType
-  is_nsfw: boolean
+  type: ChannelType
   position: number
   created_at: string
 }
@@ -62,11 +59,20 @@ export interface Channel {
 export interface Message {
   id: string
   channel_id: string
-  user_id: string
+  sender_id: string
   content: string
-  edited_at: string | null
+  is_deleted: boolean
   created_at: string
+  updated_at: string
+  // joined via query
+  profile?: {
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+  }
 }
+
+export type ChannelType = 'text' | 'voice' | 'announcement'
 
 // --- Direct Message Conversations ---
 export interface DirectMessageConversation {

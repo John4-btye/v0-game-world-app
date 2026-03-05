@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Community, Channel } from '@/lib/types'
+import { JoinButton } from '@/components/communities/join-button'
 
 export default async function CommunityPage({
   params,
@@ -11,7 +12,6 @@ export default async function CommunityPage({
   const { slug } = await params
   const supabase = await createClient()
 
-  // Fetch community
   const { data: community } = await supabase
     .from('communities')
     .select('*')
@@ -20,7 +20,6 @@ export default async function CommunityPage({
 
   if (!community) notFound()
 
-  // Fetch channels
   const { data: channels } = await supabase
     .from('channels')
     .select('*')
@@ -28,13 +27,11 @@ export default async function CommunityPage({
     .order('position', { ascending: true })
     .returns<Channel[]>()
 
-  // Fetch member count
   const { count: memberCount } = await supabase
     .from('community_members')
     .select('id', { count: 'exact', head: true })
     .eq('community_id', community.id)
 
-  // Check if current user is a member
   const { data: { user } } = await supabase.auth.getUser()
   let isMember = false
   if (user) {
@@ -48,10 +45,10 @@ export default async function CommunityPage({
   }
 
   const visibleTags = community.game_tags?.slice(0, 10) ?? []
+  const generalChannel = channels?.find((c) => c.name === 'general')
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Back link */}
       <Link
         href="/communities"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -85,15 +82,7 @@ export default async function CommunityPage({
             <span className="text-xs text-muted-foreground">
               {memberCount ?? 0} member{memberCount !== 1 ? 's' : ''}
             </span>
-            {isMember ? (
-              <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-medium text-accent">
-                Joined
-              </span>
-            ) : (
-              <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-medium text-primary">
-                Join Community (coming soon)
-              </span>
-            )}
+            <JoinButton communityId={community.id} isMember={isMember} />
           </div>
         </div>
       </div>
@@ -112,7 +101,7 @@ export default async function CommunityPage({
         </div>
       )}
 
-      {/* Channels + community content */}
+      {/* Channels + content */}
       <div className="flex gap-4">
         <aside className="w-60 shrink-0 rounded-lg border border-border bg-card p-4">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -137,13 +126,37 @@ export default async function CommunityPage({
         </aside>
 
         <section className="flex-1 rounded-lg border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold text-card-foreground">
-            Welcome to {community.name}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            Select a channel to start chatting, or explore the community info.
-            Chat functionality and community management features are coming soon.
-          </p>
+          {isMember ? (
+            generalChannel ? (
+              <div className="text-center">
+                <h2 className="text-sm font-semibold text-card-foreground">
+                  Welcome to {community.name}!
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You&apos;re a member. Head to a channel to start chatting.
+                </p>
+                <Link
+                  href={`/communities/${slug}/${generalChannel.id}`}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <span className="text-xs">#</span> Open #general
+                </Link>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                You&apos;re a member. No channels have been created yet.
+              </p>
+            )
+          ) : (
+            <div className="text-center">
+              <h2 className="text-sm font-semibold text-card-foreground">
+                Join {community.name} to chat
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                Join this community to access channels, send messages, and connect with other gamers.
+              </p>
+            </div>
+          )}
         </section>
       </div>
     </div>
