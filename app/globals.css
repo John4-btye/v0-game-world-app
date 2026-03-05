@@ -3,44 +3,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Game-World: Dark gaming aesthetic — always dark, no light mode */
+/* Game-World: Light mode (default) */
 :root {
-  --background: oklch(0.11 0.01 280);
-  --foreground: oklch(0.93 0.01 260);
-  --card: oklch(0.14 0.01 280);
-  --card-foreground: oklch(0.93 0.01 260);
-  --popover: oklch(0.14 0.01 280);
-  --popover-foreground: oklch(0.93 0.01 260);
-  --primary: oklch(0.65 0.25 265);
+  --background: oklch(0.97 0.005 260);
+  --foreground: oklch(0.15 0.02 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.02 280);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.02 280);
+  --primary: oklch(0.55 0.25 265);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.20 0.02 280);
-  --secondary-foreground: oklch(0.88 0.01 260);
-  --muted: oklch(0.20 0.02 280);
-  --muted-foreground: oklch(0.60 0.02 260);
-  --accent: oklch(0.72 0.20 175);
-  --accent-foreground: oklch(0.10 0.01 280);
+  --secondary: oklch(0.93 0.01 260);
+  --secondary-foreground: oklch(0.25 0.02 280);
+  --muted: oklch(0.93 0.01 260);
+  --muted-foreground: oklch(0.45 0.02 260);
+  --accent: oklch(0.60 0.20 175);
+  --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.24 0.02 280);
-  --input: oklch(0.20 0.02 280);
-  --ring: oklch(0.65 0.25 265);
-  --chart-1: oklch(0.65 0.25 265);
-  --chart-2: oklch(0.72 0.20 175);
-  --chart-3: oklch(0.70 0.18 140);
-  --chart-4: oklch(0.60 0.22 300);
-  --chart-5: oklch(0.75 0.15 60);
+  --border: oklch(0.88 0.01 260);
+  --input: oklch(0.93 0.01 260);
+  --ring: oklch(0.55 0.25 265);
+  --chart-1: oklch(0.55 0.25 265);
+  --chart-2: oklch(0.60 0.20 175);
+  --chart-3: oklch(0.55 0.18 140);
+  --chart-4: oklch(0.50 0.22 300);
+  --chart-5: oklch(0.65 0.15 60);
   --radius: 0.5rem;
-  --sidebar: oklch(0.09 0.01 280);
-  --sidebar-foreground: oklch(0.88 0.01 260);
-  --sidebar-primary: oklch(0.65 0.25 265);
+  --sidebar: oklch(0.95 0.005 260);
+  --sidebar-foreground: oklch(0.20 0.02 280);
+  --sidebar-primary: oklch(0.55 0.25 265);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.17 0.02 280);
-  --sidebar-accent-foreground: oklch(0.88 0.01 260);
-  --sidebar-border: oklch(0.22 0.02 280);
-  --sidebar-ring: oklch(0.65 0.25 265);
+  --sidebar-accent: oklch(0.90 0.01 260);
+  --sidebar-accent-foreground: oklch(0.20 0.02 280);
+  --sidebar-border: oklch(0.88 0.01 260);
+  --sidebar-ring: oklch(0.55 0.25 265);
 }
 
-/* Dark class mirrors root — app is always dark */
+/* Game-World: Dark gaming aesthetic */
 .dark {
   --background: oklch(0.11 0.01 280);
   --foreground: oklch(0.93 0.01 260);

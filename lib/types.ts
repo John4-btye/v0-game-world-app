@@ -74,21 +74,56 @@ export interface Message {
 
 export type ChannelType = 'text' | 'voice' | 'announcement'
 
-// --- Direct Message Conversations ---
-export interface DirectMessageConversation {
+// --- DM Conversations (dm_conversations table) ---
+export interface DmConversation {
   id: string
-  participant_one: string
-  participant_two: string
   created_at: string
 }
 
-// --- Direct Messages ---
-export interface DirectMessage {
+// --- DM Participants (dm_participants table) ---
+export interface DmParticipant {
+  id: string
+  conversation_id: string
+  user_id: string
+  joined_at: string
+  // joined via query
+  profile?: {
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+  }
+}
+
+// --- DM Messages (dm_messages table) ---
+export interface DmMessage {
   id: string
   conversation_id: string
   sender_id: string
   content: string
+  is_deleted: boolean
   created_at: string
+  // joined via query
+  profile?: {
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+  }
+}
+
+// --- Conversation with partner info (for listing) ---
+export interface ConversationWithPartner {
+  id: string
+  created_at: string
+  partner: {
+    id: string
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+  }
+  last_message?: {
+    content: string
+    created_at: string
+  }
 }
 
 // --- Friendships ---

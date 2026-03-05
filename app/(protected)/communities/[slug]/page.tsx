@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Community, Channel } from '@/lib/types'
 import { JoinButton } from '@/components/communities/join-button'
+import { MembersPanel } from '@/components/communities/members-panel'
 
 export default async function CommunityPage({
   params,
@@ -101,9 +102,9 @@ export default async function CommunityPage({
         </div>
       )}
 
-      {/* Channels + content */}
+      {/* Channels + content + members */}
       <div className="flex gap-4">
-        <aside className="w-60 shrink-0 rounded-lg border border-border bg-card p-4">
+        <aside className="w-52 shrink-0 rounded-lg border border-border bg-card p-4">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Channels
           </h2>
@@ -158,6 +159,16 @@ export default async function CommunityPage({
             </div>
           )}
         </section>
+
+        {/* Members sidebar */}
+        {isMember && (
+          <aside className="w-52 shrink-0 rounded-lg border border-border bg-card p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Members
+            </h2>
+            <MembersPanel communityId={community.id} />
+          </aside>
+        )}
       </div>
     </div>
   )

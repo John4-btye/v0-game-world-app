@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ChannelChat } from '@/components/chat/channel-chat'
+import { MembersPanel } from '@/components/communities/members-panel'
 
 export default async function ChannelPage({
   params,
@@ -100,6 +101,14 @@ export default async function ChannelPage({
           <ChannelChat channelId={channelId} channelName={channel.name} />
         </div>
       </div>
+
+      {/* Members sidebar */}
+      <aside className="w-52 shrink-0 border-l border-border bg-card p-3 overflow-y-auto">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Members
+        </h2>
+        <MembersPanel communityId={community.id} />
+      </aside>
     </div>
   )
 }
