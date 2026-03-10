@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import useSWR from 'swr'
+import { createClient } from '@/lib/supabase/client'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
 import type { Message } from '@/lib/types'
@@ -18,8 +19,32 @@ export function ChannelChat({
   const { data, mutate, isLoading } = useSWR<{ messages: Message[] }>(
     `/api/channels/${channelId}/messages`,
     fetcher,
-    { refreshInterval: 3000 }
+    { refreshInterval: 0 } // Disable polling, use realtime instead
   )
+
+  // Subscribe to realtime messages
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`messages:${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `channel_id=eq.${channelId}`,
+        },
+        () => {
+          mutate() // Refetch messages on new insert
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [channelId, mutate])
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)

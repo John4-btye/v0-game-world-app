@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { TopBar } from '@/components/layout/top-bar'
+import { PresenceTracker } from '@/components/layout/presence-tracker'
 
 export default async function ProtectedLayout({
   children,
@@ -19,6 +20,7 @@ export default async function ProtectedLayout({
 
   return (
     <div className="flex h-svh bg-background">
+      <PresenceTracker />
       <AppSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />

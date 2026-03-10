@@ -34,6 +34,23 @@ export default async function CommunityPage({
     .select('id', { count: 'exact', head: true })
     .eq('community_id', community.id)
 
+  // Get online count (users active in last 5 minutes)
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  const { data: memberIds } = await supabase
+    .from('community_members')
+    .select('user_id')
+    .eq('community_id', community.id)
+  
+  let onlineCount = 0
+  if (memberIds && memberIds.length > 0) {
+    const { count } = await supabase
+      .from('user_presence')
+      .select('id', { count: 'exact', head: true })
+      .in('user_id', memberIds.map(m => m.user_id))
+      .gte('last_seen', fiveMinutesAgo)
+    onlineCount = count ?? 0
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
   let isMember = false
   if (user) {
@@ -85,6 +102,10 @@ export default async function CommunityPage({
           <div className="mt-3 flex items-center gap-4">
             <span className="text-xs text-muted-foreground">
               {memberCount ?? 0} member{memberCount !== 1 ? 's' : ''}
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              {onlineCount} online
             </span>
             <JoinButton communityId={community.id} isMember={isMember} />
           </div>

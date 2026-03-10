@@ -24,6 +24,17 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: true })
     .limit(6)
 
+  // Get activity feed for user's communities
+  const memberCommunityIds = memberships?.map(m => m.community_id) ?? []
+  const { data: activity } = memberCommunityIds.length > 0
+    ? await supabase
+        .from('activity_feed')
+        .select('*')
+        .in('community_id', memberCommunityIds)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    : { data: [] }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Welcome banner */}
@@ -97,6 +108,29 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Activity Feed */}
+      {activity && activity.length > 0 && (
+        <section className="rounded-xl border border-border bg-card p-4">
+          <h2
+            className="text-sm font-semibold text-foreground mb-3"
+            style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
+          >
+            Recent Activity
+          </h2>
+          <div className="flex flex-col gap-2">
+            {activity.map((item: { id: string; type: string; message: string; created_at: string }) => (
+              <div key={item.id} className="flex items-start gap-2 text-xs">
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                <span className="text-muted-foreground">{item.message}</span>
+                <span className="ml-auto text-muted-foreground/60 shrink-0">
+                  {new Date(item.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* User communities */}
       <section>
