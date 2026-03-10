@@ -1,9 +1,15 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import type { Community } from '@/lib/types'
 
 export function CommunityCard({ community }: { community: Community }) {
+  const [imgError, setImgError] = useState(false)
   const visibleTags = community.game_tags?.slice(0, 4) ?? []
   const extraCount = (community.game_tags?.length ?? 0) - visibleTags.length
+
+  const showFallback = !community.icon_url || imgError
 
   return (
     <Link
@@ -14,17 +20,18 @@ export function CommunityCard({ community }: { community: Community }) {
       <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/0 transition-all group-hover:bg-primary/8 blur-[30px]" />
 
       <div className="flex items-start gap-3">
-        {community.icon_url ? (
-          <img
-            src={community.icon_url}
-            alt={`${community.name} icon`}
-            className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border"
-            crossOrigin="anonymous"
-          />
-        ) : (
+        {showFallback ? (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-lg font-bold text-primary ring-1 ring-primary/20">
             {community.name[0]}
           </div>
+        ) : (
+          <img
+            src={community.icon_url!}
+            alt={`${community.name} icon`}
+            className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
         )}
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">
