@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
@@ -40,6 +41,22 @@ export default function ThreadsPage() {
     communityId ? `/api/communities/${communityId}/threads` : null,
     fetcher
   )
+
+  // Subscribe to realtime for instant thread updates
+  useEffect(() => {
+    if (!communityId) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`threads:${communityId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'threads',
+        filter: `community_id=eq.${communityId}`,
+      }, () => mutate())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [communityId, mutate])
 
   const handlePost = async () => {
     if (!title.trim() || !content.trim() || !communityId) return

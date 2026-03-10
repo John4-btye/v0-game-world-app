@@ -80,9 +80,22 @@ export default function ConversationPage() {
 
   useEffect(() => {
     fetchMessages()
-    const interval = setInterval(fetchMessages, 3000)
-    return () => clearInterval(interval)
   }, [fetchMessages])
+
+  // Subscribe to realtime for instant message updates
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`dm:${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'dm_messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, () => fetchMessages())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [conversationId, fetchMessages])
 
   // Auto-scroll
   useEffect(() => {

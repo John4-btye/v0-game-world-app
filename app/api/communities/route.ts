@@ -3,11 +3,23 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
+  const slug = searchParams.get('slug')
   const query = searchParams.get('q')?.trim() ?? ''
   const platform = searchParams.get('platform') ?? ''
   const tag = searchParams.get('tag') ?? ''
 
   const supabase = await createClient()
+
+  // If slug is provided, return that single community
+  if (slug) {
+    const { data, error } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('slug', slug)
+      .single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 })
+    return NextResponse.json([data])
+  }
 
   let dbQuery = supabase
     .from('communities')
