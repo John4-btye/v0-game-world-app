@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { NotificationBell } from './notification-bell'
 
 export async function TopBar() {
   const supabase = await createClient()
@@ -21,6 +22,7 @@ export async function TopBar() {
 
       {/* User pill */}
       <div className="flex items-center gap-3">
+        {user && <NotificationBell />}
         {user && (
           <Link
             href="/profile"

@@ -65,5 +65,31 @@ export async function POST(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Get other participant for notification
+  const { data: participants } = await supabase
+    .from('dm_participants')
+    .select('user_id')
+    .eq('conversation_id', conversationId)
+    .neq('user_id', user.id)
+
+  const { data: senderProfile } = await supabase
+    .from('profiles')
+    .select('username, display_name')
+    .eq('id', user.id)
+    .single()
+
+  // Create notification for recipient
+  if (participants?.[0]?.user_id) {
+    await supabase.from('notifications').insert({
+      user_id: participants[0].user_id,
+      type: 'message',
+      title: 'New message',
+      body: `${senderProfile?.display_name || senderProfile?.username}: ${content.trim().slice(0, 50)}`,
+      link: `/messages/${conversationId}`,
+      actor_id: user.id,
+    })
+  }
+
   return NextResponse.json(data)
 }

@@ -108,6 +108,15 @@ export default async function CommunityPage({
       {/* Channels + content + members */}
       <div className="flex gap-4">
         <aside className="w-52 shrink-0 rounded-lg border border-border bg-card p-4">
+          <Link
+            href={`/communities/${slug}/threads`}
+            className="mb-3 flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Discussions
+          </Link>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Channels
           </h2>
