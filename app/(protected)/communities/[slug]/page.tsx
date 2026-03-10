@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { Community, Channel } from '@/lib/types'
 import { JoinButton } from '@/components/communities/join-button'
 import { MembersPanel } from '@/components/communities/members-panel'
+import { getGameImage } from '@/lib/game-images'
 
 export default async function CommunityPage({
   params,
@@ -62,18 +63,20 @@ export default async function CommunityPage({
 
       {/* Community header */}
       <div className="flex items-start gap-4 rounded-lg border border-border bg-card p-6">
-        {community.icon_url ? (
-          <img
-            src={community.icon_url}
-            alt={`${community.name} icon`}
-            className="h-16 w-16 shrink-0 rounded-xl object-cover"
-            crossOrigin="anonymous"
-          />
-        ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-2xl font-bold text-primary">
-            {community.name[0]}
-          </div>
-        )}
+        {(() => {
+          const imgSrc = getGameImage(community.slug) || community.icon_url
+          return imgSrc ? (
+            <img
+              src={imgSrc}
+              alt={`${community.name} icon`}
+              className="h-16 w-16 shrink-0 rounded-xl object-cover"
+            />
+          ) : (
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-2xl font-bold text-primary">
+              {community.name[0]}
+            </div>
+          )
+        })()}
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold text-foreground">{community.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground leading-relaxed">

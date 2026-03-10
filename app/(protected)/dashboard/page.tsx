@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { getGameImage } from '@/lib/game-images'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -115,14 +116,15 @@ export default async function DashboardPage() {
             {memberships.map((m: Record<string, unknown>) => {
               const c = m.communities as { name: string; slug: string; icon_url: string | null; description: string | null } | null
               if (!c) return null
+              const imgSrc = getGameImage(c.slug) || c.icon_url
               return (
                 <Link
                   key={m.community_id as string}
                   href={`/communities/${c.slug}`}
                   className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
                 >
-                  {c.icon_url ? (
-                    <img src={c.icon_url} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" crossOrigin="anonymous" />
+                  {imgSrc ? (
+                    <img src={imgSrc} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" />
                   ) : (
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
                       {c.name[0]}
@@ -161,14 +163,16 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((c) => (
+            {featured.map((c) => {
+              const imgSrc = getGameImage(c.slug) || c.icon_url
+              return (
               <Link
                 key={c.id}
                 href={`/communities/${c.slug}`}
                 className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
               >
-                {c.icon_url ? (
-                  <img src={c.icon_url} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" crossOrigin="anonymous" />
+                {imgSrc ? (
+                  <img src={imgSrc} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
                     {c.name[0]}
@@ -179,7 +183,7 @@ export default async function DashboardPage() {
                   <p className="truncate text-xs text-muted-foreground">{c.description}</p>
                 </div>
               </Link>
-            ))}
+            )})}
           </div>
         </section>
       )}

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getGameImage } from '@/lib/game-images'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -118,14 +119,15 @@ export default async function ProfilePage() {
             {memberships.map((m: Record<string, unknown>) => {
               const community = m.communities as { name: string; slug: string; icon_url: string | null } | null
               if (!community) return null
+              const imgSrc = getGameImage(community.slug) || community.icon_url
               return (
                 <a
                   key={m.community_id as string}
                   href={`/communities/${community.slug}`}
                   className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-secondary transition-colors"
                 >
-                  {community.icon_url ? (
-                    <img src={community.icon_url} alt="" className="h-8 w-8 rounded-lg object-cover" crossOrigin="anonymous" />
+                  {imgSrc ? (
+                    <img src={imgSrc} alt="" className="h-8 w-8 rounded-lg object-cover" />
                   ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-xs font-bold text-primary">
                       {community.name[0]}
