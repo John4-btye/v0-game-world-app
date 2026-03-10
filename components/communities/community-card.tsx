@@ -3,13 +3,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { Community } from '@/lib/types'
+import { getGameImage } from '@/lib/game-images'
 
 export function CommunityCard({ community }: { community: Community }) {
   const [imgError, setImgError] = useState(false)
   const visibleTags = community.game_tags?.slice(0, 4) ?? []
   const extraCount = (community.game_tags?.length ?? 0) - visibleTags.length
 
-  const showFallback = !community.icon_url || imgError
+  const localImage = getGameImage(community.slug)
+  const imageUrl = localImage || community.icon_url
+  const showFallback = !imageUrl || imgError
 
   return (
     <Link
@@ -26,7 +29,7 @@ export function CommunityCard({ community }: { community: Community }) {
           </div>
         ) : (
           <img
-            src={community.icon_url!}
+            src={imageUrl!}
             alt={`${community.name} icon`}
             className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border"
             loading="lazy"
