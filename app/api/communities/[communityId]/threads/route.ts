@@ -15,6 +15,8 @@ export async function GET(
       profiles:author_id (username, display_name, avatar_url)
     `)
     .eq('community_id', communityId)
+    .eq('is_deleted', false)
+    .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
 
   if (error) {
