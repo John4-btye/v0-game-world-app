@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AddFriendButton } from '@/components/friends/add-friend-button'
 import Link from 'next/link'
@@ -27,7 +27,6 @@ interface PartnerInfo {
 
 export default function ConversationPage() {
   const { conversationId } = useParams<{ conversationId: string }>()
-  const router = useRouter()
   const [messages, setMessages] = useState<DmMsg[]>([])
   const [partner, setPartner] = useState<PartnerInfo | null>(null)
   const [friendStatus, setFriendStatus] = useState<'pending' | 'accepted' | 'blocked' | null>(null)
