@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { Button } from '@/components/ui/button'
+import { MessageActions } from '@/components/discussions/message-actions'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -33,6 +34,12 @@ export default function ThreadDetailPage() {
   const threadId = params.threadId as string
   const [replyContent, setReplyContent] = useState('')
   const [posting, setPosting] = useState(false)
+  const replyInputRef = useRef<HTMLTextAreaElement>(null)
+
+  const scrollToReply = () => {
+    replyInputRef.current?.focus()
+    replyInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   const { data: thread } = useSWR<Thread>(`/api/threads/${threadId}`, fetcher)
   const { data: replies, mutate } = useSWR<Reply[]>(`/api/threads/${threadId}/replies`, fetcher)
@@ -87,6 +94,14 @@ export default function ThreadDetailPage() {
               <span>{formatDate(thread.created_at)}</span>
             </div>
             <p className="mt-4 text-foreground whitespace-pre-wrap">{thread.content}</p>
+            <div className="mt-4 pt-3 border-t border-border">
+              <MessageActions
+                threadId={thread.id}
+                likeCount={thread.like_count || 0}
+                replyCount={thread.reply_count || 0}
+                onReplyClick={scrollToReply}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -94,6 +109,7 @@ export default function ThreadDetailPage() {
       {/* Reply form */}
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
         <textarea
+          ref={replyInputRef}
           placeholder="Write a reply..."
           value={replyContent}
           onChange={(e) => setReplyContent(e.target.value)}
@@ -124,6 +140,13 @@ export default function ThreadDetailPage() {
                   <span className="text-muted-foreground">{formatDate(reply.created_at)}</span>
                 </div>
                 <p className="mt-1 text-foreground whitespace-pre-wrap">{reply.content}</p>
+                <div className="mt-2">
+                  <MessageActions
+                    replyId={reply.id}
+                    likeCount={0}
+                    showReply={false}
+                  />
+                </div>
               </div>
             </div>
           </div>
