@@ -117,7 +117,8 @@ export default function ThreadsPage() {
       )}
 
       <div className="space-y-3">
-        {threads?.map((thread) => (
+        {!communityId && <p className="text-center text-muted-foreground py-8">Loading...</p>}
+        {communityId && threads?.map((thread) => (
           <Link
             key={thread.id}
             href={`/communities/${slug}/threads/${thread.id}`}
@@ -148,7 +149,7 @@ export default function ThreadsPage() {
             </div>
           </Link>
         ))}
-        {threads?.length === 0 && (
+        {communityId && threads && threads.length === 0 && (
           <p className="text-center text-muted-foreground py-8">No threads yet. Start a discussion!</p>
         )}
       </div>
