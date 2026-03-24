@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { createClient } from '@/lib/supabase/client'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -17,6 +19,36 @@ interface Notification {
 
 export default function NotificationsPage() {
   const { data: notifications, mutate, isLoading, error } = useSWR<Notification[]>('/api/notifications', fetcher)
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    const supabase = createClient()
+    
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const channel = supabase
+        .channel('notifications-page-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => mutate()
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+
+    setupSubscription()
+  }, [mutate])
 
   const markAsRead = async (id: string) => {
     await fetch('/api/notifications', {

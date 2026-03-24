@@ -307,3 +307,30 @@ The following tables have Supabase Realtime enabled:
 - `threads` - New discussion threads
 - `user_presence` - Online status updates
 - `activity_feed` - Community activity
+- `notifications` - Instant notification delivery
+
+---
+
+## Performance Indexes
+
+The following indexes are in place for query optimization:
+
+- `idx_notifications_user_unread` - Composite index on (user_id, is_read, created_at) for fast unread notification queries
+- `idx_notifications_user_created` - Index on (user_id, created_at) for chronological notification fetching
+- `idx_threads_community` - Index on (community_id, created_at) for thread listing
+- `idx_thread_replies_thread` - Index on (thread_id, created_at) for reply fetching
+
+---
+
+## Database Triggers
+
+### notify_new_notification()
+Triggers on INSERT to `notifications` table, sending a pg_notify event for backup real-time delivery.
+
+```sql
+PERFORM pg_notify('new_notification', json_build_object(
+  'user_id', NEW.user_id,
+  'type', NEW.type,
+  'title', NEW.title
+)::text);
+```
