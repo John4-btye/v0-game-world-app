@@ -5,3 +5,9 @@
 Ask about database schema design, decribe the sytstem, and design the schema first 
 realtime - running a job on set interval (hourly. - or every other hour.)
 set up a data table for real time notifciations, set up a schedule system, seperate the workload (set up a centralized table for these seperate functions so that realtime is more achieveable.)
+
+Focus on what makes this app fun, re-usable, and keeps the user coming back for more. 
+
+Set-up auto responder for testing (inside of the message and dm tabs, possbily set this up for disccussions tabs too. )
+
+Ensure security and privacy for individual user 
