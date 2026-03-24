@@ -1,3 +1,7 @@
 /* Elevator Pitch */
 
 /* Game-World is a web platform designed to serve as a centralized community hub for gamers who enjoy online and multiplayer experiences. The goal is to combine the best elements of social and communication platforms like Discord and Instagram into a streamlined environment where users can easily discover gaming communities that match their interests. Within Game-World, users can join community hubs, participate in group chats, privately message other players, and build connections through a friend system. To simplify access and improve security, the platform uses OAuth authentication—allowing users to sign in through trusted accounts like Discord, Google, or Reddit rather than creating new credentials. The long-term vision is to create a safe, intuitive ecosystem where gamers can connect, communicate, and discover new communities while maintaining strong privacy protections and age-appropriate safeguards. */
+
+Ask about database schema design, decribe the sytstem, and design the schema first 
+realtime - running a job on set interval (hourly. - or every other hour.)
+set up a data table for real time notifciations, set up a schedule system, seperate the workload (set up a centralized table for these seperate functions so that realtime is more achieveable.)

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { createClient } from '@/lib/supabase/client'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -18,8 +19,52 @@ interface Notification {
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const { data: notifications, mutate } = useSWR<Notification[]>('/api/notifications', fetcher, {
-    refreshInterval: 30000,
+    refreshInterval: 0, // Disable polling, use realtime
   })
+
+  // Subscribe to realtime notifications
+  useEffect(() => {
+    const supabase = createClient()
+    
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const channel = supabase
+        .channel('notifications-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            mutate() // Refetch on new notification
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            mutate() // Refetch on update (mark as read)
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+
+    setupSubscription()
+  }, [mutate])
 
   const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0
 
