@@ -81,24 +81,27 @@ export function LiveActivityFeed({ communityIds }: { communityIds: string[] }) {
   }
 
   return (
-    <div className={`rounded-xl border border-border bg-card p-4 transition-all ${pulse ? 'ring-2 ring-primary/30' : ''}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <span className="relative flex h-2 w-2">
+    <div className={`relative rounded-xl border border-border bg-card p-4 transition-all overflow-hidden ${pulse ? 'ring-2 ring-primary/30' : ''}`}>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+      <div className="relative flex items-center gap-2 mb-3">
+        <span className="relative flex h-2.5 w-2.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500 glow-sm" style={{ boxShadow: '0 0 8px rgb(34 197 94 / 0.5)' }} />
         </span>
-        <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+        <h2 className="text-sm font-semibold text-gradient" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
           Live Activity
         </h2>
-        <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">Real-time</span>
+        <span className="ml-auto px-2 py-0.5 text-[10px] text-primary bg-primary/10 rounded-full uppercase tracking-wider font-medium">Real-time</span>
       </div>
-      <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+      <div className="relative flex flex-col gap-2 max-h-48 overflow-y-auto">
         {activities.slice(0, 8).map((item, i) => (
           <div
             key={item.id}
-            className={`flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-muted/50 transition-all ${i === 0 && pulse ? 'bg-primary/10 animate-pulse' : ''}`}
+            className={`flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-muted/50 transition-all duration-200 hover:translate-x-1 ${i === 0 && pulse ? 'bg-primary/10 animate-slide-up-fade glow-sm' : ''}`}
+            style={{ animationDelay: `${i * 50}ms` }}
           >
-            <span className="text-base">{getActivityIcon(item.type)}</span>
+            <span className="text-base transition-transform hover:scale-110">{getActivityIcon(item.type)}</span>
             <span className="text-muted-foreground flex-1 truncate">{item.message}</span>
             <span className="text-muted-foreground/60 shrink-0 text-[10px]">{timeAgo(item.created_at)}</span>
           </div>
