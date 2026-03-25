@@ -37,7 +37,7 @@ export function ChannelList({
       const res = await fetch('/api/channels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ communityId, name: newName.trim() }),
+        body: JSON.stringify({ community_id: communityId, name: newName.trim() }),
       })
       const data = await res.json()
       if (res.ok) {
