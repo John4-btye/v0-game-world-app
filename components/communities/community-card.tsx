@@ -17,10 +17,11 @@ export function CommunityCard({ community }: { community: Community }) {
   return (
     <Link
       href={`/communities/${community.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 card-interactive"
     >
-      {/* Subtle hover glow */}
-      <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/0 transition-all group-hover:bg-primary/8 blur-[30px]" />
+      {/* Animated glow effect */}
+      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/0 transition-all duration-300 group-hover:bg-primary/15 blur-[40px]" />
+      <div className="pointer-events-none absolute -left-8 -bottom-8 h-20 w-20 rounded-full bg-accent/0 transition-all duration-500 group-hover:bg-accent/10 blur-[30px]" />
 
       <div className="flex items-start gap-3">
         {showFallback ? (
@@ -31,15 +32,24 @@ export function CommunityCard({ community }: { community: Community }) {
           <img
             src={imageUrl!}
             alt={`${community.name} icon`}
-            className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border"
+            className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border transition-all duration-200 group-hover:ring-2 group-hover:ring-primary/50 group-hover:scale-105"
             loading="lazy"
             onError={() => setImgError(true)}
           />
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">
-            {community.name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">
+              {community.name}
+            </h3>
+            {/* Activity indicator */}
+            <span className="flex items-center gap-1 text-[10px] text-green-500">
+              <span className="relative h-1.5 w-1.5 rounded-full bg-green-500">
+                <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-50" />
+              </span>
+              <span className="hidden sm:inline opacity-80">Live</span>
+            </span>
+          </div>
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground leading-relaxed">
             {community.description}
           </p>
@@ -51,7 +61,7 @@ export function CommunityCard({ community }: { community: Community }) {
           {visibleTags.map((tag) => (
             <span
               key={tag}
-              className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground"
+              className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary"
             >
               {tag}
             </span>
