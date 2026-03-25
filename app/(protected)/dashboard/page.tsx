@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { getGameImage } from '@/lib/game-images'
+import { LiveActivityFeed } from '@/components/dashboard/live-activity-feed'
+import { OnlineFriends } from '@/components/dashboard/online-friends'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -94,43 +96,35 @@ export default async function DashboardPage() {
           <Link
             key={action.href}
             href={action.href}
-            className={`group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg ${
+            className={`group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 overflow-hidden ${
               action.color === 'accent'
-                ? 'hover:border-accent/40 hover:shadow-accent/5'
-                : 'hover:border-primary/40 hover:shadow-primary/5'
+                ? 'hover:border-accent/40 hover:shadow-accent/10'
+                : 'hover:border-primary/40 hover:shadow-primary/10'
             }`}
           >
-            <span className={action.color === 'accent' ? 'text-accent' : 'text-primary'}>
+            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+              action.color === 'accent' 
+                ? 'bg-gradient-to-b from-accent/10 to-transparent' 
+                : 'bg-gradient-to-b from-primary/10 to-transparent'
+            }`} />
+            <span className={`relative transition-transform group-hover:scale-110 ${action.color === 'accent' ? 'text-accent' : 'text-primary'}`}>
               {action.icon}
             </span>
-            <span className="text-sm font-semibold text-foreground">{action.label}</span>
-            <span className="text-xs text-muted-foreground">{action.desc}</span>
+            <span className="relative text-sm font-semibold text-foreground group-hover:text-foreground">{action.label}</span>
+            <span className="relative text-xs text-muted-foreground">{action.desc}</span>
           </Link>
         ))}
       </div>
 
-      {/* Activity Feed */}
-      {activity && activity.length > 0 && (
-        <section className="rounded-xl border border-border bg-card p-4">
-          <h2
-            className="text-sm font-semibold text-foreground mb-3"
-            style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
-          >
-            Recent Activity
-          </h2>
-          <div className="flex flex-col gap-2">
-            {activity.map((item: { id: string; type: string; message: string; created_at: string }) => (
-              <div key={item.id} className="flex items-start gap-2 text-xs">
-                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                <span className="text-muted-foreground">{item.message}</span>
-                <span className="ml-auto text-muted-foreground/60 shrink-0">
-                  {new Date(item.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Live Activity + Friends Row */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <LiveActivityFeed communityIds={memberCommunityIds} />
+        </div>
+        <div className="lg:col-span-1">
+          <OnlineFriends />
+        </div>
+      </div>
 
       {/* User communities */}
       <section>
@@ -155,19 +149,23 @@ export default async function DashboardPage() {
                 <Link
                   key={m.community_id as string}
                   href={`/communities/${c.slug}`}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
+                  className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5"
                 >
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   {imgSrc ? (
-                    <img src={imgSrc} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" />
+                    <img src={imgSrc} alt="" className="relative h-10 w-10 rounded-lg object-cover ring-1 ring-border group-hover:ring-primary/30 transition-all" />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
+                    <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
                       {c.name[0]}
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">{c.name}</p>
+                  <div className="relative min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">{c.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{c.description}</p>
                   </div>
+                  <svg className="relative h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               )
             })}
@@ -203,19 +201,23 @@ export default async function DashboardPage() {
               <Link
                 key={c.id}
                 href={`/communities/${c.slug}`}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
+                className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 overflow-hidden"
               >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 {imgSrc ? (
-                  <img src={imgSrc} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" />
+                  <img src={imgSrc} alt="" className="relative h-10 w-10 rounded-lg object-cover ring-1 ring-border group-hover:ring-primary/30 transition-all" />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
+                  <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
                     {c.name[0]}
                   </div>
                 )}
-                <div className="min-w-0">
+                <div className="relative min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">{c.name}</p>
                   <p className="truncate text-xs text-muted-foreground">{c.description}</p>
                 </div>
+                <span className="relative px-2 py-0.5 text-[10px] font-medium text-primary bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  Join
+                </span>
               </Link>
             )})}
           </div>
