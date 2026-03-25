@@ -37,13 +37,18 @@ export function ChannelList({
       const res = await fetch('/api/channels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, community_id: communityId }),
+        body: JSON.stringify({ communityId, name: newName.trim() }),
       })
+      const data = await res.json()
       if (res.ok) {
         setNewName('')
         setShowCreate(false)
         router.refresh()
+      } else {
+        alert(data.error || 'Failed to create channel')
       }
+    } catch (err) {
+      alert('Failed to create channel. Please try again.')
     } finally {
       setCreating(false)
     }
