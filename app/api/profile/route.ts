@@ -10,7 +10,7 @@ export async function PATCH(request: Request) {
   const body = await request.json()
 
   // Only allow these fields to be updated
-  const allowedFields = ['display_name', 'bio', 'is_over_16']
+  const allowedFields = ['display_name', 'bio', 'is_over_16', 'discord_webhook_url']
   const updates: Record<string, unknown> = {}
   for (const field of allowedFields) {
     if (field in body) updates[field] = body[field]

@@ -16,6 +16,11 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [provider, setProvider] = useState('')
+  const [discordWebhook, setDiscordWebhook] = useState('')
+  const [webhookSaving, setWebhookSaving] = useState(false)
+  const [webhookSaved, setWebhookSaved] = useState(false)
+  const [webhookTesting, setWebhookTesting] = useState(false)
+  const [webhookTestResult, setWebhookTestResult] = useState<'success' | 'error' | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -29,7 +34,7 @@ export default function SettingsPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, bio, is_over_16')
+        .select('display_name, bio, is_over_16, discord_webhook_url')
         .eq('id', user.id)
         .single()
 
@@ -37,6 +42,7 @@ export default function SettingsPage() {
         setDisplayName(profile.display_name ?? '')
         setBio(profile.bio ?? '')
         setIsOver16(profile.is_over_16 ?? true)
+        setDiscordWebhook(profile.discord_webhook_url ?? '')
       }
     }
     load()
@@ -63,6 +69,40 @@ export default function SettingsPage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/auth/login')
+  }
+
+  const handleSaveWebhook = async () => {
+    setWebhookSaving(true)
+    setWebhookSaved(false)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discord_webhook_url: discordWebhook || null }),
+    })
+    setWebhookSaving(false)
+    if (res.ok) {
+      setWebhookSaved(true)
+      setTimeout(() => setWebhookSaved(false), 3000)
+    }
+  }
+
+  const handleTestWebhook = async () => {
+    if (!discordWebhook) return
+    setWebhookTesting(true)
+    setWebhookTestResult(null)
+    try {
+      const res = await fetch('/api/webhook/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: discordWebhook }),
+      })
+      setWebhookTestResult(res.ok ? 'success' : 'error')
+    } catch {
+      setWebhookTestResult('error')
+    } finally {
+      setWebhookTesting(false)
+      setTimeout(() => setWebhookTestResult(null), 5000)
+    }
   }
 
   if (!mounted) return null
@@ -210,6 +250,57 @@ export default function SettingsPage() {
             <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">
               {isOver16 ? 'Hidden by default' : 'Locked (under 16)'}
             </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Discord Notifications */}
+      <section className="rounded-lg border border-border bg-card p-6">
+        <h2 className="text-lg font-semibold text-card-foreground">Discord Notifications</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Receive notifications in Discord when you get messages, friend requests, or thread replies.
+        </p>
+        <div className="mt-4 flex flex-col gap-4">
+          <div>
+            <label htmlFor="discord-webhook" className="block text-sm font-medium text-foreground">
+              Discord Webhook URL
+            </label>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+              Create a webhook in your Discord server: Server Settings → Integrations → Webhooks → New Webhook
+            </p>
+            <input
+              id="discord-webhook"
+              type="url"
+              value={discordWebhook}
+              onChange={(e) => setDiscordWebhook(e.target.value)}
+              placeholder="https://discord.com/api/webhooks/..."
+              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSaveWebhook}
+              disabled={webhookSaving}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {webhookSaving ? 'Saving...' : 'Save Webhook'}
+            </button>
+            <button
+              onClick={handleTestWebhook}
+              disabled={webhookTesting || !discordWebhook}
+              className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            >
+              {webhookTesting ? 'Testing...' : 'Test Webhook'}
+            </button>
+            {webhookSaved && (
+              <span className="text-sm font-medium text-accent">Saved!</span>
+            )}
+            {webhookTestResult === 'success' && (
+              <span className="text-sm font-medium text-green-500">Test sent!</span>
+            )}
+            {webhookTestResult === 'error' && (
+              <span className="text-sm font-medium text-destructive">Test failed</span>
+            )}
           </div>
         </div>
       </section>
