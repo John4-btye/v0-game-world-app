@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { notifyViaWebhook } from '@/lib/webhook-service'
 
 export async function GET(
   request: NextRequest,
@@ -85,14 +86,25 @@ export async function POST(
 
   // Create notification for thread author if not self
   if (thread.author_id !== user.id) {
+    const notificationBody = content.trim().slice(0, 100)
+    
     await supabase.from('notifications').insert({
       user_id: thread.author_id,
       type: 'thread_reply',
       title: 'New reply to your thread',
-      body: content.trim().slice(0, 100),
+      body: notificationBody,
       link: `/communities/thread/${threadId}`,
       actor_id: user.id,
     })
+
+    // Send Discord webhook notification
+    notifyViaWebhook(
+      thread.author_id,
+      'thread_reply',
+      'New reply to your thread',
+      notificationBody,
+      `/communities/thread/${threadId}`
+    )
   }
 
   return NextResponse.json(reply)

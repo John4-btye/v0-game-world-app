@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { notifyViaWebhook } from '@/lib/webhook-service'
 
 // GET: Fetch messages in a DM conversation
 export async function GET(
@@ -81,14 +82,26 @@ export async function POST(
 
   // Create notification for recipient
   if (participants?.[0]?.user_id) {
+    const recipientId = participants[0].user_id
+    const notificationBody = `${senderProfile?.display_name || senderProfile?.username}: ${content.trim().slice(0, 50)}`
+    
     await supabase.from('notifications').insert({
-      user_id: participants[0].user_id,
+      user_id: recipientId,
       type: 'message',
       title: 'New message',
-      body: `${senderProfile?.display_name || senderProfile?.username}: ${content.trim().slice(0, 50)}`,
+      body: notificationBody,
       link: `/messages/${conversationId}`,
       actor_id: user.id,
     })
+
+    // Send Discord webhook notification
+    notifyViaWebhook(
+      recipientId,
+      'message',
+      'New message',
+      notificationBody,
+      `/messages/${conversationId}`
+    )
   }
 
   return NextResponse.json(data)

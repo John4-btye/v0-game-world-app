@@ -5,6 +5,7 @@ import type { Community } from '@/lib/types'
 import { JoinButton } from '@/components/communities/join-button'
 import { MembersPanel } from '@/components/communities/members-panel'
 import { ChannelList } from '@/components/communities/channel-list'
+import { DeleteCommunityButton } from '@/components/communities/delete-community-button'
 import { getGameImage } from '@/lib/game-images'
 
 export default async function CommunityPage({
@@ -19,6 +20,7 @@ export default async function CommunityPage({
     .from('communities')
     .select('*')
     .eq('slug', slug)
+    .eq('is_deleted', false)
     .single<Community>()
 
   if (!community) notFound()
@@ -54,6 +56,7 @@ export default async function CommunityPage({
 
   const { data: { user } } = await supabase.auth.getUser()
   let isMember = false
+  const isOwner = user?.id === community.created_by
   if (user) {
     const { data: membership } = await supabase
       .from('community_members')
@@ -109,6 +112,9 @@ export default async function CommunityPage({
               {onlineCount} online
             </span>
             <JoinButton communityId={community.id} isMember={isMember} />
+            {isOwner && (
+              <DeleteCommunityButton communityId={community.id} communityName={community.name} />
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { notifyViaWebhook } from '@/lib/webhook-service'
 
 // GET: List friends by status (accepted, pending, blocked)
 export async function GET(request: Request) {
@@ -89,14 +90,25 @@ export async function POST(request: Request) {
     .single()
 
   // Create notification for addressee
+  const notificationBody = `${profile?.display_name || profile?.username || 'Someone'} sent you a friend request`
+  
   await supabase.from('notifications').insert({
     user_id: addressee_id,
     type: 'friend_request',
     title: 'New friend request',
-    body: `${profile?.display_name || profile?.username || 'Someone'} sent you a friend request`,
+    body: notificationBody,
     link: '/friends',
     actor_id: user.id,
   })
+
+  // Send Discord webhook notification
+  notifyViaWebhook(
+    addressee_id,
+    'friend_request',
+    'New friend request',
+    notificationBody,
+    '/friends'
+  )
 
   return NextResponse.json(data)
 }

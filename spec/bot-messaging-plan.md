@@ -22,7 +22,7 @@ What exists:
 
 Remaining work:
 - [ ] Add notification sound/toast on new notification arrival
-- [ ] Add "Mark all as read" button
+- [x] Add "Mark all as read" button (DONE - exists in notification bell)
 
 **Files to modify:**
 - `components/layout/notification-bell.tsx` - Add toast/sound trigger
@@ -33,36 +33,39 @@ Remaining work:
 
 ## Phase 2: Discord Webhook Notifications (New)
 
+**Status: COMPLETE**
+
 Send notifications to Discord when users receive messages in Game-World.
 
 ### 2.1 Database Changes
-- [ ] Add `discord_webhook_url` column to `profiles` table (optional, user-configurable)
-- [ ] Or create `user_settings` table for notification preferences
+- [x] Add `discord_webhook_url` column to `profiles` table (optional, user-configurable)
+- [x] Add `webhook_deliveries` table for tracking delivery attempts
 
-**Migration:** `scripts/023_discord_notifications.sql`
+**Migration:** `scripts/023_webhook_and_softdelete.sql`
 
 ### 2.2 Discord Webhook Sender
-- [ ] Create utility function to send Discord webhook messages
-- [ ] Handle different notification types (DM, friend request, thread reply)
-- [ ] Format embeds nicely with Game-World branding
+- [x] Create utility function to send Discord webhook messages
+- [x] Handle different notification types (DM, friend request, thread reply)
+- [x] Format embeds nicely with Game-World branding
+- [x] Retry logic with exponential backoff (3 attempts)
 
 **Files:**
-- `lib/discord-webhook.ts` - Webhook sender utility
+- `lib/webhook-service.ts` - Webhook sender utility with retries
 
 ### 2.3 Notification Triggers
 Modify existing notification-creating code to also send Discord webhooks:
-- [ ] When DM received → send Discord webhook (if user has webhook configured)
-- [ ] When friend request received → send Discord webhook
-- [ ] When thread reply received → send Discord webhook
+- [x] When DM received → send Discord webhook (if user has webhook configured)
+- [x] When friend request received → send Discord webhook
+- [x] When thread reply received → send Discord webhook
 
-**Files to modify:**
+**Files modified:**
 - `app/api/dm/[conversationId]/messages/route.ts`
 - `app/api/friends/route.ts`
 - `app/api/threads/[threadId]/replies/route.ts`
 
 ### 2.4 User Settings UI
-- [ ] Add Discord webhook URL field to settings page
-- [ ] Allow users to enable/disable Discord notifications
+- [x] Add Discord webhook URL field to settings page
+- [x] Add test webhook button
 
 **Files:**
 - `app/(protected)/settings/page.tsx` - Add Discord webhook section
@@ -81,15 +84,16 @@ Modify existing notification-creating code to also send Discord webhooks:
 **Status: Done** - JoinButton component handles this
 
 ### 3.4 Delete Community (Owner Only)
-**Status: Needs Implementation**
+**Status: COMPLETE**
 
-- [ ] Add DELETE endpoint for communities (creator-only check)
-- [ ] Add delete button to community page (visible only to creator)
-- [ ] Cascade delete: channels, messages, community_members, threads
+- [x] Add DELETE endpoint for communities (creator-only check, soft-delete)
+- [x] Add delete button to community page (visible only to creator)
+- [x] Filter out deleted communities from listings
 
 **Files:**
-- `app/api/communities/[communityId]/route.ts` - Add DELETE method
-- `app/(protected)/communities/[slug]/page.tsx` - Add delete button for owner
+- `app/api/communities/[communityId]/route.ts` - DELETE method with soft-delete
+- `components/communities/delete-community-button.tsx` - Delete button with confirmation
+- `app/(protected)/communities/[slug]/page.tsx` - Shows delete button for owner
 
 ---
 
