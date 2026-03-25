@@ -27,10 +27,9 @@ export default async function CommunityPage({
 
   const { data: channels } = await supabase
     .from('channels')
-    .select('*')
+    .select('id, name, description, type, position, created_by')
     .eq('community_id', community.id)
     .order('position', { ascending: true })
-    .returns<Channel[]>()
 
   const { count: memberCount } = await supabase
     .from('community_members')
@@ -68,7 +67,7 @@ export default async function CommunityPage({
   }
 
   const visibleTags = community.game_tags?.slice(0, 10) ?? []
-  const generalChannel = channels?.find((c) => c.name === 'general')
+  const generalChannel = channels?.find((c) => c.name === 'general') || channels?.[0]
 
   return (
     <div className="flex flex-col gap-6">
@@ -146,7 +145,7 @@ export default async function CommunityPage({
             Discussions
           </Link>
           <ChannelList
-            channels={(channels ?? []).map(c => ({ ...c, created_by: (c as { created_by?: string | null }).created_by ?? null }))}
+            channels={(channels ?? []).map(c => ({ ...c, created_by: c.created_by ?? null }))}
             communityId={community.id}
             communitySlug={slug}
             currentUserId={user?.id ?? ''}
@@ -165,9 +164,9 @@ export default async function CommunityPage({
                 </p>
                 <Link
                   href={`/communities/${slug}/${generalChannel.id}`}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-150 active:scale-95"
                 >
-                  <span className="text-xs">#</span> Open #general
+                  <span className="text-xs">#</span> Open #{generalChannel.name}
                 </Link>
               </div>
             ) : (

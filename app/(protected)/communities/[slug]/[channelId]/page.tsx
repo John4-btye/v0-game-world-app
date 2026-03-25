@@ -74,13 +74,13 @@ export default async function ChannelPage({
             <Link
               key={ch.id}
               href={`/communities/${slug}/${ch.id}`}
-              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+              className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-all duration-150 ${
                 ch.id === channelId
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ? 'bg-primary/15 text-primary font-medium shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
               }`}
             >
-              <span className="text-xs opacity-60">#</span>
+              <span className={`text-xs transition-colors ${ch.id === channelId ? 'text-primary/70' : 'opacity-60'}`}>#</span>
               {ch.name}
             </Link>
           ))}

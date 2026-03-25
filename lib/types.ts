@@ -52,6 +52,7 @@ export interface Channel {
   description: string | null
   type: ChannelType
   position: number
+  created_by: string | null
   created_at: string
 }
 

@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 
 interface Channel {
   id: string
@@ -13,7 +12,7 @@ interface Channel {
 }
 
 export function ChannelList({
-  channels,
+  channels: initialChannels,
   communityId,
   communitySlug,
   currentUserId,
@@ -26,28 +25,54 @@ export function ChannelList({
   activeChannelId?: string
 }) {
   const router = useRouter()
+  const [channels, setChannels] = useState<Channel[]>(initialChannels)
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
+  const [newChannelId, setNewChannelId] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync with props
+  useEffect(() => {
+    setChannels(initialChannels)
+  }, [initialChannels])
+
+  // Focus input when create form opens
+  useEffect(() => {
+    if (showCreate) inputRef.current?.focus()
+  }, [showCreate])
+
+  // Clear new channel animation after delay
+  useEffect(() => {
+    if (newChannelId) {
+      const timer = setTimeout(() => setNewChannelId(null), 500)
+      return () => clearTimeout(timer)
+    }
+  }, [newChannelId])
 
   const handleCreate = async () => {
-    if (!newName.trim()) return
+    const name = newName.trim()
+    if (!name) return
     setCreating(true)
     try {
       const res = await fetch('/api/channels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ community_id: communityId, name: newName.trim() }),
+        body: JSON.stringify({ community_id: communityId, name }),
       })
       const data = await res.json()
       if (res.ok) {
+        // Optimistic update with animation
+        const newChannel: Channel = { id: data.id, name, description: null, created_by: currentUserId }
+        setChannels(prev => [...prev, newChannel])
+        setNewChannelId(data.id)
         setNewName('')
         setShowCreate(false)
         router.refresh()
       } else {
         alert(data.error || 'Failed to create channel')
       }
-    } catch (err) {
+    } catch {
       alert('Failed to create channel. Please try again.')
     } finally {
       setCreating(false)
@@ -56,11 +81,13 @@ export function ChannelList({
 
   const handleDelete = async (channelId: string) => {
     if (!confirm('Delete this channel? All messages will be lost.')) return
+    // Optimistic update
+    setChannels(prev => prev.filter(c => c.id !== channelId))
     const res = await fetch(`/api/channels/${channelId}`, { method: 'DELETE' })
-    if (res.ok) router.refresh()
-    else {
+    if (!res.ok) {
       const data = await res.json()
       alert(data.error || 'Failed to delete')
+      router.refresh() // Revert on failure
     }
   }
 
@@ -72,49 +99,64 @@ export function ChannelList({
         </h2>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="text-xs text-primary hover:text-primary/80 transition-colors"
+          className={`text-xs font-medium transition-all duration-150 ${
+            showCreate 
+              ? 'text-muted-foreground hover:text-foreground' 
+              : 'text-primary hover:text-primary/80'
+          }`}
         >
           {showCreate ? 'Cancel' : '+ New'}
         </button>
       </div>
 
-      {showCreate && (
-        <div className="mb-3 flex gap-2">
+      {/* Create form with slide transition */}
+      <div className={`overflow-hidden transition-all duration-200 ease-out ${showCreate ? 'max-h-20 opacity-100 mb-3' : 'max-h-0 opacity-0'}`}>
+        <div className="flex items-stretch gap-2">
           <input
+            ref={inputRef}
             type="text"
             placeholder="Channel name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="flex-1 rounded-md border border-border bg-input px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            className="flex-1 h-8 rounded-md border border-border bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+            onKeyDown={(e) => e.key === 'Enter' && !creating && handleCreate()}
           />
-          <Button size="sm" onClick={handleCreate} disabled={creating || !newName.trim()}>
+          <button
+            onClick={handleCreate}
+            disabled={creating || !newName.trim()}
+            className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+          >
             {creating ? '...' : 'Add'}
-          </Button>
+          </button>
         </div>
-      )}
+      </div>
 
+      {/* Channel list with animations */}
       <ul className="space-y-0.5">
         {channels.map((channel) => {
           const isActive = channel.id === activeChannelId
           const isCreator = channel.created_by === currentUserId
+          const isNew = channel.id === newChannelId
           return (
-            <li key={channel.id} className="group flex items-center">
+            <li
+              key={channel.id}
+              className={`group flex items-center transition-all duration-200 ${isNew ? 'animate-slide-up-fade' : ''}`}
+            >
               <Link
-                href={`/communities/${communitySlug}?channel=${channel.id}`}
-                className={`flex-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                href={`/communities/${communitySlug}/${channel.id}`}
+                className={`flex-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-all duration-150 ${
                   isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-primary/15 text-primary font-medium shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                 }`}
               >
-                <span className="text-muted-foreground">#</span>
+                <span className={`transition-colors ${isActive ? 'text-primary/70' : 'text-muted-foreground/60'}`}>#</span>
                 <span className="truncate">{channel.name}</span>
               </Link>
               {isCreator && (
                 <button
                   onClick={() => handleDelete(channel.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-destructive hover:text-destructive/80 transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1 text-destructive/70 hover:text-destructive transition-all duration-150"
                   title="Delete channel"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,8 +167,10 @@ export function ChannelList({
             </li>
           )
         })}
-        {channels.length === 0 && (
-          <li className="text-xs text-muted-foreground py-2 text-center">No channels yet</li>
+        {channels.length === 0 && !showCreate && (
+          <li className="text-xs text-muted-foreground py-3 text-center opacity-70">
+            No channels yet
+          </li>
         )}
       </ul>
     </div>
