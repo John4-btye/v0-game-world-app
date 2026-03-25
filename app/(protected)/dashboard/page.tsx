@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getGameImage } from '@/lib/game-images'
 import { LiveActivityFeed } from '@/components/dashboard/live-activity-feed'
 import { OnlineFriends } from '@/components/dashboard/online-friends'
+import { TestBotPanel } from '@/components/dev/test-bot-panel'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -179,6 +180,9 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* Dev: Test Bot Panel */}
+      <TestBotPanel />
 
       {/* Discover */}
       {featured && featured.length > 0 && (
