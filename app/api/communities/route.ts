@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       .from('communities')
       .select('*')
       .eq('slug', slug)
+      .eq('is_deleted', false)
       .single()
     if (error) return NextResponse.json({ error: error.message }, { status: 404 })
     return NextResponse.json([data])
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     .from('communities')
     .select('*')
     .eq('is_nsfw', false)
+    .eq('is_deleted', false)
     .order('name', { ascending: true })
     .limit(50)
 
