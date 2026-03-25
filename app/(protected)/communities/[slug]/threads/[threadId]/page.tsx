@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { MessageActions } from '@/components/discussions/message-actions'
 
@@ -24,21 +25,46 @@ interface Thread {
   reply_count: number
   like_count: number
   is_pinned: boolean
+  author_id: string
   profiles: { username: string; display_name: string | null; avatar_url: string | null }
   communities: { name: string; slug: string }
 }
 
 export default function ThreadDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   const threadId = params.threadId as string
   const [replyContent, setReplyContent] = useState('')
   const [posting, setPosting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const replyInputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null))
+  }, [])
 
   const scrollToReply = () => {
     replyInputRef.current?.focus()
     replyInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this thread? This action cannot be undone.')) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/threads/${threadId}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.push(`/communities/${slug}/threads`)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete')
+      }
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const { data: thread } = useSWR<Thread>(`/api/threads/${threadId}`, fetcher)
@@ -87,7 +113,18 @@ export default function ThreadDetailPage() {
             </div>
           )}
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">{thread.title}</h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-xl font-bold text-foreground">{thread.title}</h1>
+              {currentUserId === thread.author_id && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="shrink-0 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 rounded transition-colors"
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
               <span>{thread.profiles?.display_name || thread.profiles?.username}</span>
               <span>·</span>
