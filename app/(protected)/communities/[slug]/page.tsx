@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import type { Community, Channel } from '@/lib/types'
+import type { Community } from '@/lib/types'
 import { JoinButton } from '@/components/communities/join-button'
 import { MembersPanel } from '@/components/communities/members-panel'
+import { ChannelList } from '@/components/communities/channel-list'
 import { getGameImage } from '@/lib/game-images'
 
 export default async function CommunityPage({
@@ -131,32 +132,19 @@ export default async function CommunityPage({
         <aside className="w-52 shrink-0 rounded-lg border border-border bg-card p-4">
           <Link
             href={`/communities/${slug}/threads`}
-            className="mb-3 flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+            className="mb-4 flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             Discussions
           </Link>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Channels
-          </h2>
-          {channels && channels.length > 0 ? (
-            <nav className="flex flex-col gap-1">
-              {channels.map((channel) => (
-                <Link
-                  key={channel.id}
-                  href={`/communities/${slug}/${channel.id}`}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                >
-                  <span className="text-xs opacity-60">#</span>
-                  {channel.name}
-                </Link>
-              ))}
-            </nav>
-          ) : (
-            <p className="text-xs text-muted-foreground">No channels yet.</p>
-          )}
+          <ChannelList
+            channels={(channels ?? []).map(c => ({ ...c, created_by: (c as { created_by?: string | null }).created_by ?? null }))}
+            communityId={community.id}
+            communitySlug={slug}
+            currentUserId={user?.id ?? ''}
+          />
         </aside>
 
         <section className="flex-1 rounded-lg border border-border bg-card p-6">
