@@ -26,21 +26,21 @@ export async function TopBar() {
         {user && (
           <Link
             href="/profile"
-            className="flex items-center gap-2.5 rounded-full border border-border bg-secondary/50 py-1 pl-1 pr-3 transition-colors hover:border-primary/40 hover:bg-secondary"
+            className="group flex items-center gap-2.5 rounded-full border border-border bg-secondary/50 py-1 pl-1 pr-3 transition-all duration-200 hover:border-primary/40 hover:bg-secondary hover:shadow-md hover:shadow-primary/10"
           >
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={`${displayName}'s avatar`}
-                className="h-7 w-7 rounded-full object-cover ring-1 ring-primary/30"
+                className="h-7 w-7 rounded-full object-cover ring-2 ring-primary/30 transition-all group-hover:ring-primary/50 group-hover:scale-105"
                 crossOrigin="anonymous"
               />
             ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary ring-1 ring-primary/30">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary ring-2 ring-primary/30 transition-all group-hover:ring-primary/50 group-hover:scale-105">
                 {displayName[0]?.toUpperCase()}
               </div>
             )}
-            <span className="hidden text-xs font-medium text-foreground md:inline">
+            <span className="hidden text-xs font-semibold text-foreground group-hover:text-primary transition-colors md:inline">
               {displayName}
             </span>
           </Link>

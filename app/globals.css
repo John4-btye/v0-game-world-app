@@ -189,3 +189,59 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Interactive button with shine */
+.btn-shine {
+  @apply relative overflow-hidden;
+}
+.btn-shine::before {
+  content: '';
+  @apply absolute inset-0 -translate-x-full transition-transform duration-500;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+.btn-shine:hover::before {
+  @apply translate-x-full;
+}
+
+/* Interactive link with arrow */
+.link-arrow {
+  @apply inline-flex items-center gap-1.5 transition-all duration-150;
+}
+.link-arrow svg {
+  @apply h-4 w-4 transition-transform duration-150;
+}
+.link-arrow:hover svg {
+  @apply translate-x-0.5;
+}
+
+/* Interactive tag */
+.tag-interactive {
+  @apply rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150;
+  @apply hover:scale-105 hover:shadow-sm cursor-default select-none;
+}
+
+/* Card with hover lift */
+.card-hover {
+  @apply rounded-xl border border-border bg-card transition-all duration-200;
+  @apply hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5;
+}
+
+/* Section card */
+.section-card {
+  @apply rounded-xl border border-border bg-card p-6 transition-all duration-200;
+  @apply hover:border-primary/20;
+}
+
+/* Nav item active glow */
+.nav-active {
+  @apply bg-primary/15 text-primary shadow-lg shadow-primary/10;
+}
+
+/* Online pulse indicator */
+.online-pulse {
+  @apply relative;
+}
+.online-pulse::after {
+  content: '';
+  @apply absolute inset-0 rounded-full bg-green-500 animate-ping opacity-50;
+}

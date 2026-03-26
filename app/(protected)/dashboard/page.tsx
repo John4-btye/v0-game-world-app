@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Welcome banner */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/8 blur-[60px]" />
         <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-accent/8 blur-[40px]" />
         <div className="relative">
@@ -136,8 +136,11 @@ export default async function DashboardPage() {
           >
             Your Communities
           </h2>
-          <Link href="/communities" className="text-xs font-medium text-primary hover:underline">
+          <Link href="/communities" className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
             View all
+            <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
         {memberships && memberships.length > 0 ? (
@@ -172,10 +175,13 @@ export default async function DashboardPage() {
             })}
           </div>
         ) : (
-          <div className="mt-3 rounded-xl border border-dashed border-border bg-card/50 p-10 text-center">
+          <div className="mt-3 rounded-xl border border-dashed border-border bg-card/50 p-10 text-center transition-all duration-200 hover:border-primary/30 hover:bg-card">
             <p className="text-sm text-muted-foreground">You haven&apos;t joined any communities yet.</p>
-            <Link href="/communities" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
-              Browse communities
+            <Link href="/communities" className="group mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 active:scale-95">
+              Get Started
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
             </Link>
           </div>
         )}
@@ -194,8 +200,11 @@ export default async function DashboardPage() {
             >
               Discover Communities
             </h2>
-            <Link href="/communities" className="text-xs font-medium text-primary hover:underline">
+            <Link href="/communities" className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
               See all
+              <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
