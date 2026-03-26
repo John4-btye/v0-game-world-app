@@ -73,16 +73,16 @@ export default async function CommunityPage({
     <div className="flex flex-col gap-6">
       <Link
         href="/communities"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-all duration-150"
       >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         Back to Communities
       </Link>
 
       {/* Community header */}
-      <div className="flex items-start gap-4 rounded-lg border border-border bg-card p-6">
+      <div className="flex items-start gap-5 rounded-xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
         {(() => {
           const imgSrc = getGameImage(community.slug) || community.icon_url
           return imgSrc ? (
@@ -107,7 +107,10 @@ export default async function CommunityPage({
               {memberCount ?? 0} member{memberCount !== 1 ? 's' : ''}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="relative h-2 w-2">
+                <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-50" />
+                <span className="relative h-2 w-2 rounded-full bg-green-500 block" />
+              </span>
               {onlineCount} online
             </span>
             <JoinButton communityId={community.id} isMember={isMember} />
@@ -124,7 +127,7 @@ export default async function CommunityPage({
           {visibleTags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
+              className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-all duration-150 hover:bg-primary/20 hover:text-primary hover:scale-105 cursor-default select-none"
             >
               {tag}
             </span>
@@ -134,15 +137,18 @@ export default async function CommunityPage({
 
       {/* Channels + content + members */}
       <div className="flex gap-4">
-        <aside className="w-52 shrink-0 rounded-lg border border-border bg-card p-4">
+        <aside className="w-52 shrink-0 rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
           <Link
             href={`/communities/${slug}/threads`}
-            className="mb-4 flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+            className="group mb-4 flex items-center gap-2.5 rounded-xl bg-primary/10 px-3 py-2.5 text-sm font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/25 active:scale-95"
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             Discussions
+            <svg className="h-3 w-3 ml-auto opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
           <ChannelList
             channels={(channels ?? []).map(c => ({ ...c, created_by: c.created_by ?? null }))}
@@ -152,7 +158,7 @@ export default async function CommunityPage({
           />
         </aside>
 
-        <section className="flex-1 rounded-lg border border-border bg-card p-6">
+        <section className="flex-1 rounded-xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20">
           {isMember ? (
             generalChannel ? (
               <div className="text-center">
@@ -164,9 +170,13 @@ export default async function CommunityPage({
                 </p>
                 <Link
                   href={`/communities/${slug}/${generalChannel.id}`}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-150 active:scale-95"
+                  className="group mt-5 inline-flex items-center gap-2.5 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-95"
                 >
-                  <span className="text-xs">#</span> Open #{generalChannel.name}
+                  <span className="text-primary-foreground/70">#</span>
+                  <span>Enter #{generalChannel.name}</span>
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
                 </Link>
               </div>
             ) : (
@@ -188,7 +198,7 @@ export default async function CommunityPage({
 
         {/* Members sidebar */}
         {isMember && (
-          <aside className="w-52 shrink-0 rounded-lg border border-border bg-card p-4">
+<aside className="w-52 shrink-0 rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5">
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Members
             </h2>

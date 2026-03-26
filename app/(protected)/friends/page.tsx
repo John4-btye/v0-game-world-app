@@ -74,10 +74,10 @@ export default function FriendsPage() {
           <button
             key={t.value}
             onClick={() => setTab(t.value)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 active:scale-95 ${
               tab === t.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md'
             }`}
           >
             {t.label}
@@ -86,9 +86,9 @@ export default function FriendsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative">
+      <div className="relative group">
         <svg
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -101,17 +101,18 @@ export default function FriendsPage() {
           placeholder="Search friends..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-border bg-input py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full rounded-xl border border-border bg-input py-2.5 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary hover:border-primary/30"
         />
       </div>
 
       {/* Friends list */}
       {loading ? (
-        <div className="rounded-lg border border-border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">Loading...</p>
+        <div className="rounded-xl border border-border bg-card p-8 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="mt-3 text-sm text-muted-foreground">Loading...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-6 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center transition-all duration-200 hover:border-primary/30">
           <p className="text-sm text-muted-foreground">
             {tab === 'accepted' && 'No friends yet. Add friends from community chats or when viewing member profiles.'}
             {tab === 'pending' && 'No pending friend requests.'}

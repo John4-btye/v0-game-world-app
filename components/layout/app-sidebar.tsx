@@ -70,17 +70,17 @@ export function AppSidebar() {
       {/* Brand */}
       <Link
         href="/dashboard"
-        className="flex items-center gap-3 border-b border-sidebar-border px-3 py-4 md:px-4"
+        className="group flex items-center gap-3 border-b border-sidebar-border px-3 py-4 md:px-4 transition-all duration-200 hover:bg-sidebar-accent/50"
       >
-        <span className="relative h-10 w-10 shrink-0">
+        <span className="relative h-10 w-10 shrink-0 transition-transform duration-200 group-hover:scale-105">
           <Image
             src="/images/logo.jpg"
             alt="Game-World"
             fill
-            className="rounded-lg object-cover"
+            className="rounded-xl object-cover ring-2 ring-transparent group-hover:ring-primary/30 transition-all"
           />
         </span>
-        <span className="hidden text-lg font-bold tracking-tight text-sidebar-foreground md:inline"
+        <span className="hidden text-lg font-bold tracking-tight text-sidebar-foreground group-hover:text-primary transition-colors md:inline"
           style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
         >
           Game-World
@@ -95,18 +95,23 @@ export function AppSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary/15 text-primary shadow-[inset_0_0_0_1px] shadow-primary/20'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                  ? 'bg-primary/15 text-primary shadow-lg shadow-primary/10'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:translate-x-0.5'
               }`}
             >
               {/* Active indicator bar */}
               {isActive && (
-                <span className="absolute -left-2 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+                <span className="absolute -left-2 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary animate-pulse" />
               )}
-              <span className="shrink-0">{item.icon}</span>
+              <span className={`shrink-0 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>{item.icon}</span>
               <span className="hidden md:inline">{item.label}</span>
+              {!isActive && (
+                <svg className="ml-auto h-3 w-3 opacity-0 -translate-x-1 transition-all duration-150 group-hover:opacity-50 group-hover:translate-x-0 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
             </Link>
           )
         })}
