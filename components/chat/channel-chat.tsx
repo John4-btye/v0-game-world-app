@@ -12,9 +12,13 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 export function ChannelChat({
   channelId,
   channelName,
+  currentUsername,
+  communityId,
 }: {
   channelId: string
   channelName: string
+  currentUsername?: string
+  communityId?: string
 }) {
   const { data, mutate, isLoading } = useSWR<{ messages: Message[] }>(
     `/api/channels/${channelId}/messages`,
@@ -102,7 +106,7 @@ export function ChannelChat({
         ) : (
           <div className="flex flex-col gap-0.5">
             {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
+              <ChatMessage key={msg.id} message={msg} currentUsername={currentUsername} />
             ))}
           </div>
         )}
@@ -114,6 +118,7 @@ export function ChannelChat({
         channelId={channelId}
         onMessageSent={handleMessageSent}
         placeholder={`Message #${channelName}`}
+        communityId={communityId}
       />
     </div>
   )
