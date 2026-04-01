@@ -180,9 +180,16 @@ export default async function CommunityPage({
                 </Link>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                You&apos;re a member. No channels have been created yet.
-              </p>
+              <div className="text-center py-4">
+                <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">No channels yet</p>
+                <p className="text-xs text-muted-foreground mb-3">Create a channel to start chatting</p>
+                <p className="text-xs text-muted-foreground">Use the <span className="font-semibold text-primary">+ New</span> button in the sidebar</p>
+              </div>
             )
           ) : (
             <div className="text-center">

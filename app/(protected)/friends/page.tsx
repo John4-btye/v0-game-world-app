@@ -112,12 +112,35 @@ export default function FriendsPage() {
           <p className="mt-3 text-sm text-muted-foreground">Loading...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center transition-all duration-200 hover:border-primary/30">
-          <p className="text-sm text-muted-foreground">
-            {tab === 'accepted' && 'No friends yet. Add friends from community chats or when viewing member profiles.'}
-            {tab === 'pending' && 'No pending friend requests.'}
-            {tab === 'blocked' && 'No blocked users.'}
+        <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center transition-all duration-200 hover:border-primary/30">
+          <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {tab === 'accepted' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />}
+              {tab === 'pending' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />}
+              {tab === 'blocked' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />}
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-foreground mb-1">
+            {tab === 'accepted' && 'No friends yet'}
+            {tab === 'pending' && 'No pending requests'}
+            {tab === 'blocked' && 'No blocked users'}
           </p>
+          <p className="text-xs text-muted-foreground mb-4">
+            {tab === 'accepted' && 'Join communities and chat to meet new people'}
+            {tab === 'pending' && 'Friend requests you send or receive will appear here'}
+            {tab === 'blocked' && 'Users you block will appear here'}
+          </p>
+          {tab === 'accepted' && (
+            <a 
+              href="/communities" 
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+            >
+              Find your community
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          )}
         </div>
       ) : tab === 'pending' ? (
         <div className="flex flex-col gap-4">

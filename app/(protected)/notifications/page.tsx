@@ -109,12 +109,25 @@ export default function NotificationsPage() {
           </div>
         )}
         {!isLoading && !error && notifications?.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <svg className="h-12 w-12 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <p className="mt-3 text-sm font-medium">No notifications yet</p>
-            <p className="text-xs mt-1">You&apos;ll see notifications here when you get friend requests, messages, or replies.</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+              <svg className="h-7 w-7 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <p className="mt-4 text-sm font-semibold text-foreground">All caught up!</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+              Notifications appear when someone sends you a message, replies to your thread, or wants to connect.
+            </p>
+            <Link
+              href="/communities"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+            >
+              Find people to chat with
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
           </div>
         )}
         {!isLoading && !error && notifications?.map((n) => (
