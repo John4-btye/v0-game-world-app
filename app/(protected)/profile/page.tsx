@@ -47,6 +47,18 @@ export default async function ProfilePage() {
     .eq('status', 'accepted')
     .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
 
+  // Get user's gaming activity - extract favorite games from communities
+  const gameTagsFromCommunities: string[] = []
+  memberships?.forEach((m: Record<string, unknown>) => {
+    const comm = m.communities as { game_tags?: string[] } | null
+    if (comm?.game_tags) gameTagsFromCommunities.push(...comm.game_tags)
+  })
+  const favoriteGames = [...new Set(gameTagsFromCommunities)].slice(0, 5)
+  
+  // Estimate play style based on community types (placeholder)
+  const playStyle = profile?.play_style || 'casual'
+  const activeHours = profile?.active_hours || 'flexible'
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
@@ -88,6 +100,65 @@ export default async function ProfilePage() {
           <div>
             <p className="text-lg font-bold text-foreground">{createdAt}</p>
             <p className="text-xs text-muted-foreground">Member Since</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Gamer Identity */}
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h3 className="text-sm font-semibold text-foreground mb-4">Gamer Identity</h3>
+        
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Favorite Games */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Favorite Games</p>
+            {favoriteGames.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {favoriteGames.map((game, i) => (
+                  <span key={i} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                    {game}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">Join communities to show your favorite games</p>
+            )}
+          </div>
+          
+          {/* Play Style */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Play Style</p>
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                playStyle === 'competitive' ? 'bg-red-500/20 text-red-500' :
+                playStyle === 'casual' ? 'bg-green-500/20 text-green-500' :
+                'bg-blue-500/20 text-blue-500'
+              }`}>
+                {playStyle === 'competitive' ? '🏆 Competitive' :
+                 playStyle === 'casual' ? '🎮 Casual' :
+                 '⚡ Flexible'}
+              </span>
+            </div>
+          </div>
+          
+          {/* Active Hours */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Usually Active</p>
+            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground capitalize">
+              {activeHours === 'morning' ? '🌅 Morning' :
+               activeHours === 'afternoon' ? '☀️ Afternoon' :
+               activeHours === 'evening' ? '🌆 Evening' :
+               activeHours === 'night' ? '🌙 Night' :
+               '⏰ Flexible'}
+            </span>
+          </div>
+          
+          {/* Member of Communities */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Communities</p>
+            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+              {memberships?.length ?? 0} joined
+            </span>
           </div>
         </div>
       </div>
