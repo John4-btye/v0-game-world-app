@@ -70,5 +70,52 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Parse @mentions and create notifications
+  const mentionRegex = /@(\w+)/g
+  const mentions = [...content.matchAll(mentionRegex)].map(m => m[1].toLowerCase())
+  
+  if (mentions.length > 0) {
+    // Get channel info for the notification link
+    const { data: channel } = await supabase
+      .from('channels')
+      .select('community_id, communities!inner(slug)')
+      .eq('id', channelId)
+      .single()
+    
+    // Get sender's profile for notification
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', user.id)
+      .single()
+    
+    const senderName = senderProfile?.display_name || senderProfile?.username || 'Someone'
+    
+    // Find mentioned users
+    const { data: mentionedUsers } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .in('username', mentions)
+    
+    // Create notifications for mentioned users (except self)
+    const notifications = (mentionedUsers || [])
+      .filter(u => u.id !== user.id)
+      .map(u => ({
+        user_id: u.id,
+        type: 'mention',
+        title: `${senderName} mentioned you`,
+        message: content.length > 100 ? content.slice(0, 100) + '...' : content,
+        body: content.length > 100 ? content.slice(0, 100) + '...' : content,
+        link: channel?.communities?.slug 
+          ? `/communities/${channel.communities.slug}/${channelId}`
+          : `/communities`,
+        actor_id: user.id,
+      }))
+    
+    if (notifications.length > 0) {
+      await supabase.from('notifications').insert(notifications)
+    }
+  }
+
   return NextResponse.json({ message })
 }

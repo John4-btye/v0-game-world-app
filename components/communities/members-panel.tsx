@@ -18,7 +18,7 @@ interface Member {
   online_status?: 'online' | 'away' | 'offline'
 }
 
-export function MembersPanel({ communityId }: { communityId: string }) {
+export function MembersPanel({ communityId, channelId }: { communityId: string; channelId?: string }) {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -71,6 +71,7 @@ export function MembersPanel({ communityId }: { communityId: string }) {
                 key={m.user_id}
                 member={m}
                 onMessage={handleMessage}
+                channelId={channelId}
               />
             ))}
           </div>
@@ -86,6 +87,7 @@ export function MembersPanel({ communityId }: { communityId: string }) {
               key={m.user_id}
               member={m}
               onMessage={handleMessage}
+              channelId={channelId}
             />
           ))}
         </div>
@@ -97,13 +99,25 @@ export function MembersPanel({ communityId }: { communityId: string }) {
 function MemberRow({
   member,
   onMessage,
+  channelId,
 }: {
   member: Member
   onMessage: (id: string) => void
+  channelId?: string
 }) {
   const [showActions, setShowActions] = useState(false)
+  const [copied, setCopied] = useState(false)
   const displayName = member.profile?.display_name ?? member.profile?.username ?? 'User'
   const friendStatus = member.friendship?.status as 'pending' | 'accepted' | 'blocked' | undefined
+  
+  // Copy mention to clipboard for easy pasting
+  const handleCopyMention = () => {
+    if (member.profile?.username) {
+      navigator.clipboard.writeText(`@${member.profile.username}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   return (
     <div
@@ -144,6 +158,24 @@ function MemberRow({
 
       {showActions && !member.is_self && (
         <div className="flex items-center gap-1">
+          {/* Copy @mention button */}
+          <button
+            onClick={handleCopyMention}
+            className="rounded p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            title={copied ? 'Copied!' : 'Copy @mention'}
+            aria-label={`Copy mention for ${displayName}`}
+          >
+            {copied ? (
+              <svg className="h-3.5 w-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            )}
+          </button>
+          
           <button
             onClick={() => onMessage(member.user_id)}
             className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"

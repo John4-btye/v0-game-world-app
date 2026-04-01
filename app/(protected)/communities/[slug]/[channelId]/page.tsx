@@ -45,6 +45,13 @@ export default async function ChannelPage({
   if (!membership) {
     redirect(`/communities/${slug}`)
   }
+  
+  // Get current user's profile for mentions
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single()
 
   // Fetch all channels for sidebar
   const { data: channels } = await supabase
@@ -98,7 +105,12 @@ export default async function ChannelPage({
 
         {/* Chat */}
         <div className="flex-1">
-          <ChannelChat channelId={channelId} channelName={channel.name} />
+          <ChannelChat 
+            channelId={channelId} 
+            channelName={channel.name} 
+            currentUsername={profile?.username}
+            communityId={community.id}
+          />
         </div>
       </div>
 
@@ -107,7 +119,7 @@ export default async function ChannelPage({
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Members
         </h2>
-        <MembersPanel communityId={community.id} />
+        <MembersPanel communityId={community.id} channelId={channelId} />
       </aside>
     </div>
   )
