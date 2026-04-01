@@ -92,6 +92,7 @@ export async function POST(
       user_id: thread.author_id,
       type: 'thread_reply',
       title: 'New reply to your thread',
+      message: notificationBody,
       body: notificationBody,
       link: `/communities/thread/${threadId}`,
       actor_id: user.id,

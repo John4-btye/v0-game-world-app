@@ -89,6 +89,7 @@ export async function POST(
       user_id: recipientId,
       type: 'message',
       title: 'New message',
+      message: notificationBody,
       body: notificationBody,
       link: `/messages/${conversationId}`,
       actor_id: user.id,
