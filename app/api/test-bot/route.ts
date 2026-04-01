@@ -47,11 +47,13 @@ export async function POST(request: NextRequest) {
         const conversationId = searchParams.get('conversationId')
         if (!conversationId) return NextResponse.json({ error: 'conversationId required' }, { status: 400 })
         
+        const messageText = getRandomResponse('dm')
         const notificationData = {
           user_id: user.id,
           type: 'message',
           title: 'Test Bot Response',
-          body: getRandomResponse('dm'),
+          message: messageText,
+          body: messageText,
           link: `/messages/${conversationId}`,
         }
         console.log('[v0] Inserting DM notification:', notificationData)
@@ -70,11 +72,13 @@ export async function POST(request: NextRequest) {
         const threadId = searchParams.get('threadId')
         if (!threadId) return NextResponse.json({ error: 'threadId required' }, { status: 400 })
         
+        const threadMessage = getRandomResponse('thread')
         const notificationData = {
           user_id: user.id,
           type: 'thread_reply',
           title: 'Test Bot replied to your thread',
-          body: getRandomResponse('thread'),
+          message: threadMessage,
+          body: threadMessage,
           link: `/communities/test/threads/${threadId}`,
         }
         console.log('[v0] Inserting thread notification:', notificationData)
@@ -90,11 +94,13 @@ export async function POST(request: NextRequest) {
       }
 
       case 'send_friend_request': {
+        const friendMessage = 'TestBot wants to be your friend!'
         const notificationData = {
           user_id: user.id,
           type: 'friend_request',
           title: 'New friend request',
-          body: 'TestBot wants to be your friend!',
+          message: friendMessage,
+          body: friendMessage,
           link: '/friends',
         }
         console.log('[v0] Inserting friend request notification:', notificationData)
@@ -110,26 +116,32 @@ export async function POST(request: NextRequest) {
       }
 
       case 'test_all': {
+        const dmMsg = getRandomResponse('dm')
+        const threadMsg = getRandomResponse('thread')
+        const friendMsg = 'TestBot wants to connect with you!'
         const notificationsData = [
           {
             user_id: user.id,
             type: 'message',
             title: 'New DM from TestBot',
-            body: getRandomResponse('dm'),
+            message: dmMsg,
+            body: dmMsg,
             link: '/messages',
           },
           {
             user_id: user.id,
             type: 'thread_reply',
             title: 'TestBot replied to your thread',
-            body: getRandomResponse('thread'),
+            message: threadMsg,
+            body: threadMsg,
             link: '/communities',
           },
           {
             user_id: user.id,
             type: 'friend_request',
             title: 'Friend request from TestBot',
-            body: 'TestBot wants to connect with you!',
+            message: friendMsg,
+            body: friendMsg,
             link: '/friends',
           },
         ]

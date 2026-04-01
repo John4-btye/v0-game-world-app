@@ -96,6 +96,7 @@ export async function POST(request: Request) {
     user_id: addressee_id,
     type: 'friend_request',
     title: 'New friend request',
+    message: notificationBody,
     body: notificationBody,
     link: '/friends',
     actor_id: user.id,
