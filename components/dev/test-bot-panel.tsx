@@ -1,25 +1,44 @@
 'use client'
 
 import { useState } from 'react'
+import { mutate } from 'swr'
 import { Button } from '@/components/ui/button'
+
+type ActionType = 'test_all' | 'send_friend_request' | 'respond_dm' | 'respond_thread'
 
 export function TestBotPanel() {
   const [status, setStatus] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loadingAction, setLoadingAction] = useState<ActionType | null>(null)
 
-  const triggerBot = async (action: string, params?: Record<string, string>) => {
-    setLoading(true)
+  const triggerBot = async (action: ActionType, params?: Record<string, string>) => {
+    setLoadingAction(action)
     setStatus(null)
+    
     try {
+      console.log('[v0] Test bot action started:', action, params)
       const queryParams = new URLSearchParams({ action, ...params })
       const res = await fetch(`/api/test-bot?${queryParams}`, { method: 'POST' })
       const data = await res.json()
-      setStatus(data.success ? `Success: ${data.message}` : `Error: ${data.error}`)
-    } catch {
+      
+      if (res.ok && data.success) {
+        console.log('[v0] Test bot success:', data.message)
+        setStatus(`Success: ${data.message}`)
+        // Trigger SWR to refetch notifications globally
+        await mutate('/api/notifications')
+        console.log('[v0] Notifications cache invalidated')
+      } else {
+        console.error('[v0] Test bot error:', data.error)
+        setStatus(`Error: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      console.error('[v0] Test bot request failed:', err)
       setStatus('Error: Request failed')
+    } finally {
+      setLoadingAction(null)
     }
-    setLoading(false)
   }
+
+  const isLoading = loadingAction !== null
 
   return (
     <div className="rounded-xl border border-dashed border-yellow-500/50 bg-yellow-500/5 p-4">
@@ -36,40 +55,40 @@ export function TestBotPanel() {
           size="sm"
           variant="outline"
           onClick={() => triggerBot('test_all')}
-          disabled={loading}
+          disabled={isLoading}
           className="text-xs"
         >
-          {loading ? 'Sending...' : 'Send All Test Notifications'}
+          {loadingAction === 'test_all' ? 'Sending...' : 'Send All Test Notifications'}
         </Button>
         
         <Button
           size="sm"
           variant="outline"
           onClick={() => triggerBot('send_friend_request')}
-          disabled={loading}
+          disabled={isLoading}
           className="text-xs"
         >
-          Test Friend Request
+          {loadingAction === 'send_friend_request' ? 'Sending...' : 'Test Friend Request'}
         </Button>
         
         <Button
           size="sm"
           variant="outline"
           onClick={() => triggerBot('respond_dm', { conversationId: 'test' })}
-          disabled={loading}
+          disabled={isLoading}
           className="text-xs"
         >
-          Test DM Notification
+          {loadingAction === 'respond_dm' ? 'Sending...' : 'Test DM Notification'}
         </Button>
         
         <Button
           size="sm"
           variant="outline"
           onClick={() => triggerBot('respond_thread', { threadId: 'test' })}
-          disabled={loading}
+          disabled={isLoading}
           className="text-xs"
         >
-          Test Thread Reply
+          {loadingAction === 'respond_thread' ? 'Sending...' : 'Test Thread Reply'}
         </Button>
       </div>
       
