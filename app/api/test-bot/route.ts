@@ -39,57 +39,78 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  console.log('[v0] Test bot called with action:', action, 'user_id:', user.id)
+
   try {
     switch (action) {
       case 'respond_dm': {
         const conversationId = searchParams.get('conversationId')
         if (!conversationId) return NextResponse.json({ error: 'conversationId required' }, { status: 400 })
         
-        // Insert a bot response as if from the user (simulating received message)
-        // Since we can't create a real bot user, we'll create a notification instead
-        await supabase.from('notifications').insert({
+        const notificationData = {
           user_id: user.id,
           type: 'message',
           title: 'Test Bot Response',
           body: getRandomResponse('dm'),
           link: `/messages/${conversationId}`,
-        })
+        }
+        console.log('[v0] Inserting DM notification:', notificationData)
         
-        return NextResponse.json({ success: true, message: 'Bot notification sent' })
+        const { data, error } = await supabase.from('notifications').insert(notificationData).select()
+        console.log('[v0] Insert result - data:', data, 'error:', error)
+        
+        if (error) {
+          return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+        }
+        
+        return NextResponse.json({ success: true, message: 'Bot notification sent', inserted: data })
       }
 
       case 'respond_thread': {
         const threadId = searchParams.get('threadId')
         if (!threadId) return NextResponse.json({ error: 'threadId required' }, { status: 400 })
         
-        // Create a notification simulating a thread reply
-        await supabase.from('notifications').insert({
+        const notificationData = {
           user_id: user.id,
           type: 'thread_reply',
           title: 'Test Bot replied to your thread',
           body: getRandomResponse('thread'),
           link: `/communities/test/threads/${threadId}`,
-        })
+        }
+        console.log('[v0] Inserting thread notification:', notificationData)
         
-        return NextResponse.json({ success: true, message: 'Bot thread notification sent' })
+        const { data, error } = await supabase.from('notifications').insert(notificationData).select()
+        console.log('[v0] Insert result - data:', data, 'error:', error)
+        
+        if (error) {
+          return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+        }
+        
+        return NextResponse.json({ success: true, message: 'Bot thread notification sent', inserted: data })
       }
 
       case 'send_friend_request': {
-        // Create a notification simulating a friend request
-        await supabase.from('notifications').insert({
+        const notificationData = {
           user_id: user.id,
           type: 'friend_request',
           title: 'New friend request',
           body: 'TestBot wants to be your friend!',
           link: '/friends',
-        })
+        }
+        console.log('[v0] Inserting friend request notification:', notificationData)
         
-        return NextResponse.json({ success: true, message: 'Bot friend request notification sent' })
+        const { data, error } = await supabase.from('notifications').insert(notificationData).select()
+        console.log('[v0] Insert result - data:', data, 'error:', error)
+        
+        if (error) {
+          return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+        }
+        
+        return NextResponse.json({ success: true, message: 'Bot friend request notification sent', inserted: data })
       }
 
       case 'test_all': {
-        // Send all types of notifications to test the system
-        await supabase.from('notifications').insert([
+        const notificationsData = [
           {
             user_id: user.id,
             type: 'message',
@@ -111,9 +132,17 @@ export async function POST(request: NextRequest) {
             body: 'TestBot wants to connect with you!',
             link: '/friends',
           },
-        ])
+        ]
+        console.log('[v0] Inserting all notifications:', notificationsData)
         
-        return NextResponse.json({ success: true, message: 'All test notifications sent' })
+        const { data, error } = await supabase.from('notifications').insert(notificationsData).select()
+        console.log('[v0] Insert result - data:', data, 'error:', error)
+        
+        if (error) {
+          return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+        }
+        
+        return NextResponse.json({ success: true, message: 'All test notifications sent', inserted: data })
       }
 
       default:
