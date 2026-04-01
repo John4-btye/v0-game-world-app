@@ -5,6 +5,8 @@ import { LiveActivityFeed } from '@/components/dashboard/live-activity-feed'
 import { OnlineFriends } from '@/components/dashboard/online-friends'
 import { TestBotPanel } from '@/components/dev/test-bot-panel'
 import { RecentConversations } from '@/components/dashboard/recent-conversations'
+import { SquadFinder } from '@/components/dashboard/squad-finder'
+import { SmartRecommendations } from '@/components/dashboard/smart-recommendations'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -239,10 +241,12 @@ export default async function DashboardPage() {
           </section>
         </div>
 
-        {/* Right Column - Friends & Conversations */}
+        {/* Right Column - Friends, Squad & Conversations */}
         <div className="flex flex-col gap-4">
+          <SquadFinder />
           <OnlineFriends />
           <RecentConversations />
+          <SmartRecommendations userCommunities={memberCommunityIds} />
         </div>
       </div>
 
