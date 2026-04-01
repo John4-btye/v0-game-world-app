@@ -15,6 +15,7 @@ interface Member {
   } | null
   friendship: { id: string; status: string } | null
   is_self: boolean
+  online_status?: 'online' | 'away' | 'offline'
 }
 
 export function MembersPanel({ communityId }: { communityId: string }) {
@@ -110,17 +111,28 @@ function MemberRow({
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      {member.profile?.avatar_url ? (
-        <img
-          src={member.profile.avatar_url}
-          alt={`${displayName}'s avatar`}
-          className="h-7 w-7 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary-foreground">
-          {displayName[0]?.toUpperCase()}
-        </div>
-      )}
+      <div className="relative">
+        {member.profile?.avatar_url ? (
+          <img
+            src={member.profile.avatar_url}
+            alt={`${displayName}'s avatar`}
+            className="h-7 w-7 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary-foreground">
+            {displayName[0]?.toUpperCase()}
+          </div>
+        )}
+        {/* Online indicator */}
+        <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-card ${
+          member.online_status === 'online' ? 'bg-green-500' : 
+          member.online_status === 'away' ? 'bg-yellow-500' : 'bg-muted-foreground/30'
+        }`}>
+          {member.online_status === 'online' && (
+            <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-50" />
+          )}
+        </span>
+      </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-medium text-foreground">
           {displayName}

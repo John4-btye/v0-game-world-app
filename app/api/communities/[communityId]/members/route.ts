@@ -49,13 +49,42 @@ export async function GET(
     }
   }
 
+  // Get presence data
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+  let presenceMap: Record<string, 'online' | 'away' | 'offline'> = {}
+  
+  if (userIds.length > 0) {
+    const { data: presenceData } = await supabase
+      .from('user_presence')
+      .select('user_id, last_seen')
+      .in('user_id', userIds)
+    
+    for (const p of presenceData ?? []) {
+      if (p.last_seen >= fiveMinutesAgo) {
+        presenceMap[p.user_id] = 'online'
+      } else if (p.last_seen >= fifteenMinutesAgo) {
+        presenceMap[p.user_id] = 'away'
+      } else {
+        presenceMap[p.user_id] = 'offline'
+      }
+    }
+  }
+
   const enriched = (members ?? []).map((m) => ({
     user_id: m.user_id,
     role: m.role,
     profile: profiles[m.user_id] ?? null,
     friendship: friendships[m.user_id] ?? null,
     is_self: m.user_id === user.id,
+    online_status: presenceMap[m.user_id] ?? 'offline',
   }))
+  
+  // Sort: online first, then away, then offline
+  enriched.sort((a, b) => {
+    const order = { online: 0, away: 1, offline: 2 }
+    return order[a.online_status] - order[b.online_status]
+  })
 
   return NextResponse.json(enriched)
 }
