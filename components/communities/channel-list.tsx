@@ -168,8 +168,17 @@ export function ChannelList({
           )
         })}
         {channels.length === 0 && !showCreate && (
-          <li className="text-xs text-muted-foreground py-3 text-center opacity-70">
-            No channels yet
+          <li className="py-4 text-center">
+            <p className="text-xs text-muted-foreground mb-2">No channels yet</p>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Create one to start chatting
+            </button>
           </li>
         )}
       </ul>

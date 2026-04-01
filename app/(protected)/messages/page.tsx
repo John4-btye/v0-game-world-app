@@ -52,13 +52,24 @@ export default function MessagesPage() {
         </div>
       ) : conversations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center transition-all duration-200 hover:border-primary/30 hover:bg-card">
-          <svg className="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+          <div className="mx-auto h-14 w-14 rounded-full bg-muted flex items-center justify-center">
+            <svg className="h-7 w-7 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
           <p className="mt-4 text-sm font-semibold text-foreground">No conversations yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Start a conversation from your friends list or a community chat.
+          <p className="mt-1 text-xs text-muted-foreground max-w-xs mx-auto">
+            Start chatting by sending a message to a friend or someone in a community
           </p>
+          <Link 
+            href="/friends"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+          >
+            Start a conversation
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-2">

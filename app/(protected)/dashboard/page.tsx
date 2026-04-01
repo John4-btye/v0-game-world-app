@@ -4,6 +4,7 @@ import { getGameImage } from '@/lib/game-images'
 import { LiveActivityFeed } from '@/components/dashboard/live-activity-feed'
 import { OnlineFriends } from '@/components/dashboard/online-friends'
 import { TestBotPanel } from '@/components/dev/test-bot-panel'
+import { RecentConversations } from '@/components/dashboard/recent-conversations'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -14,148 +15,270 @@ export default async function DashboardPage() {
   const meta = user?.user_metadata ?? {}
   const displayName = meta.full_name || meta.name || 'Gamer'
 
+  // Get user's communities
   const { data: memberships } = await supabase
     .from('community_members')
-    .select('community_id, communities(name, slug, icon_url, description)')
+    .select('community_id, communities(id, name, slug, icon_url, description)')
     .eq('user_id', user?.id ?? '')
     .limit(6)
 
-  const { data: featured } = await supabase
+  const memberCommunityIds = memberships?.map(m => m.community_id) ?? []
+
+  // Get trending communities (most members + recent activity)
+  const { data: trending } = await supabase
     .from('communities')
-    .select('*')
+    .select('*, community_members(count)')
     .eq('is_nsfw', false)
-    .order('created_at', { ascending: true })
+    .eq('is_deleted', false)
+    .order('created_at', { ascending: false })
     .limit(6)
 
-  // Get activity feed for user's communities
-  const memberCommunityIds = memberships?.map(m => m.community_id) ?? []
-  const { data: activity } = memberCommunityIds.length > 0
-    ? await supabase
-        .from('activity_feed')
-        .select('*')
-        .in('community_id', memberCommunityIds)
-        .order('created_at', { ascending: false })
-        .limit(5)
-    : { data: [] }
+  // Get active communities (with recent messages)
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  const { data: activeChannels } = await supabase
+    .from('channel_messages')
+    .select('channels!inner(community_id, communities!inner(id, name, slug, icon_url))')
+    .gte('created_at', fiveMinutesAgo)
+    .limit(20)
+
+  // Dedupe active communities and count activity
+  const activityMap = new Map<string, { community: any; count: number }>()
+  activeChannels?.forEach((msg: any) => {
+    const comm = msg.channels?.communities
+    if (comm) {
+      const existing = activityMap.get(comm.id)
+      if (existing) {
+        existing.count++
+      } else {
+        activityMap.set(comm.id, { community: comm, count: 1 })
+      }
+    }
+  })
+  const activeCommunities = Array.from(activityMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Welcome banner */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/8 blur-[60px]" />
-        <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-accent/8 blur-[40px]" />
-        <div className="relative">
-          <h1
-            className="text-2xl font-bold text-foreground md:text-3xl"
-            style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
-          >
-            Welcome back, {displayName}
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-            Your gaming hub awaits. Explore communities, chat with friends, and find your next squad.
-          </p>
+      {/* Welcome + Quick Actions Hero */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/5 p-6 md:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-[80px]" />
+        <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-accent/10 blur-[60px]" />
+        
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground md:text-3xl" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+              Welcome back, {displayName}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-md">
+              {activeCommunities.length > 0 
+                ? `${activeCommunities.length} communities are active right now. Jump in!`
+                : 'Your gaming hub awaits. Find your squad and start playing.'
+              }
+            </p>
+          </div>
+          
+          {/* Primary CTA */}
+          <div className="flex flex-wrap gap-3">
+            {activeCommunities.length > 0 ? (
+              <Link
+                href={`/communities/${activeCommunities[0].community.slug}`}
+                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                </span>
+                Join Active Lobby
+                <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            ) : (
+              <Link
+                href="/communities"
+                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95"
+              >
+                Find Your Squad
+                <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            )}
+            <Link
+              href="/messages"
+              className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-lg active:scale-95"
+            >
+              <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Jump into Chat
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            href: '/communities',
-            label: 'Browse Communities',
-            desc: 'Find your next game group',
-            color: 'primary' as const,
-            icon: (
-              <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            ),
-          },
-          {
-            href: '/friends',
-            label: 'Find Friends',
-            desc: 'Connect with other gamers',
-            color: 'accent' as const,
-            icon: (
-              <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            ),
-          },
-          {
-            href: '/messages',
-            label: 'Messages',
-            desc: 'Check your conversations',
-            color: 'primary' as const,
-            icon: (
-              <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            ),
-          },
-        ].map((action) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className={`group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 overflow-hidden ${
-              action.color === 'accent'
-                ? 'hover:border-accent/40 hover:shadow-accent/10'
-                : 'hover:border-primary/40 hover:shadow-primary/10'
-            }`}
-          >
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${
-              action.color === 'accent' 
-                ? 'bg-gradient-to-b from-accent/10 to-transparent' 
-                : 'bg-gradient-to-b from-primary/10 to-transparent'
-            }`} />
-            <span className={`relative transition-transform group-hover:scale-110 ${action.color === 'accent' ? 'text-accent' : 'text-primary'}`}>
-              {action.icon}
+      {/* Active Right Now - Hot Section */}
+      {activeCommunities.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-orange-500" />
             </span>
-            <span className="relative text-sm font-semibold text-foreground group-hover:text-foreground">{action.label}</span>
-            <span className="relative text-xs text-muted-foreground">{action.desc}</span>
-          </Link>
-        ))}
-      </div>
-
-      {/* Live Activity + Friends Row */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <LiveActivityFeed communityIds={memberCommunityIds} />
-        </div>
-        <div className="lg:col-span-1">
-          <OnlineFriends />
-        </div>
-      </div>
-
-      {/* User communities */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-lg font-semibold text-foreground"
-            style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
-          >
-            Your Communities
-          </h2>
-          <Link href="/communities" className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
-            View all
-            <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-        {memberships && memberships.length > 0 ? (
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {memberships.map((m: Record<string, unknown>) => {
-              const c = m.communities as { name: string; slug: string; icon_url: string | null; description: string | null } | null
-              if (!c) return null
-              const imgSrc = getGameImage(c.slug) || c.icon_url
+            <h2 className="text-lg font-semibold text-foreground" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+              Active Right Now
+            </h2>
+            <span className="text-xs text-orange-500 font-medium ml-1">HOT</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {activeCommunities.map(({ community, count }) => {
+              const imgSrc = getGameImage(community.slug) || community.icon_url
               return (
                 <Link
-                  key={m.community_id as string}
-                  href={`/communities/${c.slug}`}
-                  className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5"
+                  key={community.id}
+                  href={`/communities/${community.slug}`}
+                  className="group relative flex items-center gap-3 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-card p-4 transition-all duration-200 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/10 hover:-translate-y-0.5"
                 >
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {imgSrc ? (
+                    <img src={imgSrc} alt="" className="h-12 w-12 rounded-lg object-cover ring-2 ring-orange-500/30" />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/20 text-lg font-bold text-orange-500">
+                      {community.name[0]}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground group-hover:text-orange-500 transition-colors">{community.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="flex items-center gap-1 text-xs text-orange-500 font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        {count} chatting now
+                      </span>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition-all">
+                    Join
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Activity Feed */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <LiveActivityFeed communityIds={memberCommunityIds} />
+          
+          {/* Your Communities */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-foreground" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+                Your Communities
+              </h2>
+              <Link href="/communities" className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                View all
+                <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+            {memberships && memberships.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {memberships.map((m: Record<string, unknown>) => {
+                  const c = m.communities as { id: string; name: string; slug: string; icon_url: string | null; description: string | null } | null
+                  if (!c) return null
+                  const imgSrc = getGameImage(c.slug) || c.icon_url
+                  const isActive = activeCommunities.some(ac => ac.community.id === c.id)
+                  return (
+                    <Link
+                      key={m.community_id as string}
+                      href={`/communities/${c.slug}`}
+                      className={`group relative flex items-center gap-3 rounded-xl border p-3 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
+                        isActive 
+                          ? 'border-green-500/30 bg-green-500/5 hover:border-green-500/50 hover:shadow-green-500/10' 
+                          : 'border-border bg-card hover:border-primary/40 hover:shadow-primary/10'
+                      }`}
+                    >
+                      {imgSrc ? (
+                        <img src={imgSrc} alt="" className={`h-10 w-10 rounded-lg object-cover ring-1 transition-all ${isActive ? 'ring-green-500/50' : 'ring-border group-hover:ring-primary/30'}`} />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
+                          {c.name[0]}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">{c.name}</p>
+                          {isActive && (
+                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-green-500 font-medium">
+                              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground">{c.description}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center transition-all duration-200 hover:border-primary/30 hover:bg-card">
+                <p className="text-sm text-muted-foreground mb-3">No communities yet - let&apos;s fix that!</p>
+                <Link href="/communities" className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 active:scale-95">
+                  Browse Communities
+                  <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Right Column - Friends & Conversations */}
+        <div className="flex flex-col gap-4">
+          <OnlineFriends />
+          <RecentConversations />
+        </div>
+      </div>
+
+      {/* Trending Communities */}
+      {trending && trending.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <h2 className="text-lg font-semibold text-foreground" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+                Trending Communities
+              </h2>
+            </div>
+            <Link href="/communities" className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+              See all
+              <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {trending.map((c, i) => {
+              const imgSrc = getGameImage(c.slug) || c.icon_url
+              const isTop3 = i < 3
+              return (
+                <Link
+                  key={c.id}
+                  href={`/communities/${c.slug}`}
+                  className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {isTop3 && (
+                    <span className="absolute top-2 right-2 text-[10px] font-bold text-primary/60">#{i + 1}</span>
+                  )}
                   {imgSrc ? (
                     <img src={imgSrc} alt="" className="relative h-10 w-10 rounded-lg object-cover ring-1 ring-border group-hover:ring-primary/30 transition-all" />
                   ) : (
@@ -164,78 +287,21 @@ export default async function DashboardPage() {
                     </div>
                   )}
                   <div className="relative min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">{c.name}</p>
+                    <p className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">{c.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{c.description}</p>
                   </div>
-                  <svg className="relative h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <span className="relative px-2.5 py-1 text-xs font-semibold text-primary bg-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all group-hover:bg-primary group-hover:text-primary-foreground">
+                    Join
+                  </span>
                 </Link>
               )
             })}
           </div>
-        ) : (
-          <div className="mt-3 rounded-xl border border-dashed border-border bg-card/50 p-10 text-center transition-all duration-200 hover:border-primary/30 hover:bg-card">
-            <p className="text-sm text-muted-foreground">You haven&apos;t joined any communities yet.</p>
-            <Link href="/communities" className="group mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 active:scale-95">
-              Get Started
-              <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Dev: Test Bot Panel */}
       <TestBotPanel />
-
-      {/* Discover */}
-      {featured && featured.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between">
-            <h2
-              className="text-lg font-semibold text-foreground"
-              style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
-            >
-              Discover Communities
-            </h2>
-            <Link href="/communities" className="group inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
-              See all
-              <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((c) => {
-              const imgSrc = getGameImage(c.slug) || c.icon_url
-              return (
-              <Link
-                key={c.id}
-                href={`/communities/${c.slug}`}
-                className="group relative flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                {imgSrc ? (
-                  <img src={imgSrc} alt="" className="relative h-10 w-10 rounded-lg object-cover ring-1 ring-border group-hover:ring-primary/30 transition-all" />
-                ) : (
-                  <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
-                    {c.name[0]}
-                  </div>
-                )}
-                <div className="relative min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors">{c.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{c.description}</p>
-                </div>
-                <span className="relative px-2 py-0.5 text-[10px] font-medium text-primary bg-primary/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  Join
-                </span>
-              </Link>
-            )})}
-          </div>
-        </section>
-      )}
     </div>
   )
 }
