@@ -113,9 +113,30 @@ export function LiveActivityFeed({ communityIds }: { communityIds: string[] }) {
       </div>
 
       {activities.length === 0 ? (
-        <div className="text-center py-6">
-          <p className="text-xs text-muted-foreground">No recent activity</p>
-          <p className="text-[10px] text-muted-foreground mt-1">Join communities to see activity here</p>
+        <div className="text-center py-10">
+          <div className="mx-auto h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-3">
+            <svg className="h-7 w-7 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-foreground mb-1">Waiting for activity...</p>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+            {communityIds.length > 0 
+              ? "Your communities are quiet right now. Be the first to start a conversation!"
+              : "Join communities to see live activity from your gaming groups"
+            }
+          </p>
+          {communityIds.length > 0 && (
+            <a 
+              href="/communities" 
+              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              Start chatting
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
