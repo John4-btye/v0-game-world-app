@@ -75,7 +75,7 @@ export default async function DashboardPage() {
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-md">
               {activeCommunities.length > 0 
                 ? `${activeCommunities.length} communities are active right now. Jump in!`
-                : 'Your gaming hub awaits. Find your squad and start playing.'
+                : 'Your gaming hub awaits. Find your community and start playing.'
               }
             </p>
           </div>
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
                 href="/communities"
                 className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:scale-95"
               >
-                Find Your Squad
+                Find Your Community
                 <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -232,7 +232,7 @@ export default async function DashboardPage() {
               </svg>
             </div>
             <p className="text-sm font-medium text-foreground mb-1">No communities yet</p>
-            <p className="text-xs text-muted-foreground mb-4">Join communities to find your gaming squad</p>
+            <p className="text-xs text-muted-foreground mb-4">Join communities to find your people</p>
             <Link href="/communities" className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 active:scale-95">
               Browse Communities
               <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
