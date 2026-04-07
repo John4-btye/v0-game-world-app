@@ -43,6 +43,7 @@ export function SquadFinder() {
   const { data, error, isLoading } = useSWR('/api/squad', fetcher, { refreshInterval: 30000 })
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [form, setForm] = useState({
     game: '',
     platform: '',
@@ -59,6 +60,7 @@ export function SquadFinder() {
     if (!form.game.trim()) return
     
     setCreating(true)
+    setSuccessMessage(null)
     try {
       const res = await fetch('/api/squad', {
         method: 'POST',
@@ -66,9 +68,14 @@ export function SquadFinder() {
         body: JSON.stringify(form),
       })
       if (res.ok) {
-        setShowCreate(false)
+        // Reset form fields
         setForm({ game: '', platform: '', play_style: 'both', message: '', max_players: 4 })
+        // Show success message
+        setSuccessMessage('Request successfully sent!')
+        // Refresh the list
         mutate('/api/squad')
+        // Auto-hide success message after 4 seconds
+        setTimeout(() => setSuccessMessage(null), 4000)
       }
     } finally {
       setCreating(false)
@@ -126,6 +133,15 @@ export function SquadFinder() {
       {/* Create Form */}
       {showCreate && (
         <form onSubmit={handleCreate} className="mb-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/30 px-3 py-2">
+              <svg className="h-4 w-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium text-green-500">{successMessage}</span>
+            </div>
+          )}
           <div className="grid gap-3">
             {/* Game selection */}
             <div>
