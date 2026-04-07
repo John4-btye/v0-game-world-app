@@ -43,7 +43,7 @@ export function SquadFinder() {
   const { data, error, isLoading } = useSWR('/api/squad', fetcher, { refreshInterval: 30000 })
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [buttonState, setButtonState] = useState<'idle' | 'success' | 'error'>('idle')
   const [form, setForm] = useState({
     game: '',
     platform: '',
@@ -57,10 +57,16 @@ export function SquadFinder() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.game.trim()) return
+    
+    // Validate required field
+    if (!form.game.trim()) {
+      setButtonState('error')
+      setTimeout(() => setButtonState('idle'), 3000)
+      return
+    }
     
     setCreating(true)
-    setSuccessMessage(null)
+    setButtonState('idle')
     try {
       const res = await fetch('/api/squad', {
         method: 'POST',
@@ -68,15 +74,22 @@ export function SquadFinder() {
         body: JSON.stringify(form),
       })
       if (res.ok) {
-        // Reset form fields
-        setForm({ game: '', platform: '', play_style: 'both', message: '', max_players: 4 })
-        // Show success message
-        setSuccessMessage('Request successfully sent!')
+        // Show success state on button
+        setButtonState('success')
         // Refresh the list
         mutate('/api/squad')
-        // Auto-hide success message after 4 seconds
-        setTimeout(() => setSuccessMessage(null), 4000)
+        // Reset form fields after a short delay so user sees success
+        setTimeout(() => {
+          setForm({ game: '', platform: '', play_style: 'both', message: '', max_players: 4 })
+          setButtonState('idle')
+        }, 2000)
+      } else {
+        setButtonState('error')
+        setTimeout(() => setButtonState('idle'), 3000)
       }
+    } catch {
+      setButtonState('error')
+      setTimeout(() => setButtonState('idle'), 3000)
     } finally {
       setCreating(false)
     }
@@ -133,15 +146,6 @@ export function SquadFinder() {
       {/* Create Form */}
       {showCreate && (
         <form onSubmit={handleCreate} className="mb-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
-          {/* Success Message */}
-          {successMessage && (
-            <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/30 px-3 py-2">
-              <svg className="h-4 w-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium text-green-500">{successMessage}</span>
-            </div>
-          )}
           <div className="grid gap-3">
             {/* Game selection */}
             <div>
@@ -200,10 +204,23 @@ export function SquadFinder() {
 
             <button
               type="submit"
-              disabled={creating || !form.game.trim()}
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition-all active:scale-95 disabled:opacity-50"
+              disabled={creating || buttonState === 'success'}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-70 ${
+                buttonState === 'success' 
+                  ? 'bg-green-500 hover:bg-green-500' 
+                  : buttonState === 'error'
+                  ? 'bg-red-500 hover:bg-red-500'
+                  : 'bg-orange-500 hover:bg-orange-600'
+              }`}
             >
-              {creating ? 'Posting...' : 'Post Squad Request'}
+              {creating 
+                ? 'Posting...' 
+                : buttonState === 'success'
+                ? 'Squad Request Successful'
+                : buttonState === 'error'
+                ? 'Squad Request Failed'
+                : 'Post Squad Request'
+              }
             </button>
           </div>
         </form>
