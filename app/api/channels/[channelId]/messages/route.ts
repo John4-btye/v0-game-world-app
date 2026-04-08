@@ -30,6 +30,8 @@ export async function GET(
 
   const { data: messages, error } = await query
 
+  console.log('[v0] Messages API GET:', { channelId, userId: user.id, messagesCount: messages?.length, error })
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -60,11 +62,15 @@ export async function POST(
     return NextResponse.json({ error: 'Message too long (max 2000 chars)' }, { status: 400 })
   }
 
+  console.log('[v0] Messages API POST:', { channelId, userId: user.id, contentLength: content.length })
+
   const { data: message, error } = await supabase
     .from('messages')
     .insert({ channel_id: channelId, sender_id: user.id, content })
     .select('*, profile:profiles!sender_id(username, display_name, avatar_url)')
     .single()
+
+  console.log('[v0] Messages API POST result:', { messageId: message?.id, error })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

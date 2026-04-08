@@ -8,7 +8,10 @@ import { ChatInput } from './chat-input'
 import { DevChannelMessages } from '@/components/dev/dev-messages-viewer'
 import type { Message } from '@/lib/types'
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json()).then((data) => {
+  console.log('[v0] ChannelChat fetcher response:', data)
+  return data
+})
 
 export function ChannelChat({
   channelId,
@@ -56,6 +59,7 @@ export function ChannelChat({
   const [autoScroll, setAutoScroll] = useState(true)
 
   const messages = data?.messages ?? []
+  console.log('[v0] ChannelChat messages:', messages.length, 'items, data:', data)
 
   useEffect(() => {
     if (autoScroll) {
