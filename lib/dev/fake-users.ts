@@ -7,6 +7,7 @@ export interface FakeUser {
   display_name: string
   avatar_url: string | null
   status: 'online' | 'away' | 'offline'
+  isRealUser?: boolean
 }
 
 export const FAKE_USERS: FakeUser[] = [
@@ -74,6 +75,13 @@ export interface DevChannelMessage {
   created_at: string
 }
 
+// Helper to get username by ID
+function getUsernameById(id: string): string {
+  const fakeUser = FAKE_USERS.find(u => u.id === id)
+  if (fakeUser) return fakeUser.username
+  return id.startsWith('fake-') ? 'unknown_fake' : 'real_user'
+}
+
 // Global dev state (resets on page refresh)
 class DevStore {
   private messages: DevMessage[] = []
@@ -81,6 +89,16 @@ class DevStore {
   private channelMessages: DevChannelMessage[] = []
   private blockedUsers: Map<string, Set<string>> = new Map() // blocker_id -> Set of blocked_ids
   private listeners: Set<() => void> = new Set()
+  
+  // Action logging
+  private logAction(action: string, userId: string, details: Record<string, unknown>) {
+    console.log(`[v0 DevStore] ${action}`, {
+      user_id: userId,
+      username: getUsernameById(userId),
+      timestamp: new Date().toISOString(),
+      ...details,
+    })
+  }
 
   subscribe(listener: () => void) {
     this.listeners.add(listener)
@@ -93,7 +111,10 @@ class DevStore {
 
   // Messages
   sendMessage(from: string, to: string, content: string, conversationId?: string) {
-    if (this.isBlocked(from, to)) return null
+    if (this.isBlocked(from, to)) {
+      this.logAction('MESSAGE_BLOCKED', from, { to_user_id: to, to_username: getUsernameById(to), reason: 'user_blocked' })
+      return null
+    }
     const msg: DevMessage = {
       id: `dev-msg-${Date.now()}`,
       sender_id: from,
@@ -103,6 +124,7 @@ class DevStore {
       conversation_id: conversationId,
     }
     this.messages.push(msg)
+    this.logAction('MESSAGE_SENT', from, { to_user_id: to, to_username: getUsernameById(to), message_id: msg.id, content_length: content.length })
     this.notify()
     return msg
   }
@@ -133,12 +155,18 @@ class DevStore {
 
   // Friendships
   sendFriendRequest(from: string, to: string) {
-    if (this.isBlocked(from, to)) return null
+    if (this.isBlocked(from, to)) {
+      this.logAction('FRIEND_REQUEST_BLOCKED', from, { to_user_id: to, to_username: getUsernameById(to), reason: 'user_blocked' })
+      return null
+    }
     const existing = this.friendships.find(f => 
       (f.requester_id === from && f.addressee_id === to) ||
       (f.requester_id === to && f.addressee_id === from)
     )
-    if (existing) return existing
+    if (existing) {
+      this.logAction('FRIEND_REQUEST_EXISTS', from, { to_user_id: to, to_username: getUsernameById(to), existing_status: existing.status })
+      return existing
+    }
 
     const friendship: DevFriendship = {
       id: `dev-friend-${Date.now()}`,
@@ -148,25 +176,48 @@ class DevStore {
       created_at: new Date().toISOString(),
     }
     this.friendships.push(friendship)
+    this.logAction('FRIEND_REQUEST_SENT', from, { to_user_id: to, to_username: getUsernameById(to), friendship_id: friendship.id })
     this.notify()
     return friendship
   }
 
-  acceptFriendRequest(friendshipId: string) {
+  acceptFriendRequest(friendshipId: string, acceptedByUserId?: string) {
     const f = this.friendships.find(f => f.id === friendshipId)
     if (f) {
       f.status = 'accepted'
+      this.logAction('FRIEND_REQUEST_ACCEPTED', acceptedByUserId || f.addressee_id, { 
+        friendship_id: friendshipId, 
+        requester_id: f.requester_id, 
+        requester_username: getUsernameById(f.requester_id) 
+      })
       this.notify()
     }
     return f
   }
 
-  rejectFriendRequest(friendshipId: string) {
+  rejectFriendRequest(friendshipId: string, rejectedByUserId?: string) {
+    const f = this.friendships.find(f => f.id === friendshipId)
+    if (f) {
+      this.logAction('FRIEND_REQUEST_REJECTED', rejectedByUserId || f.addressee_id, { 
+        friendship_id: friendshipId, 
+        requester_id: f.requester_id, 
+        requester_username: getUsernameById(f.requester_id) 
+      })
+    }
     this.friendships = this.friendships.filter(f => f.id !== friendshipId)
     this.notify()
   }
 
-  removeFriend(friendshipId: string) {
+  removeFriend(friendshipId: string, removedByUserId?: string) {
+    const f = this.friendships.find(f => f.id === friendshipId)
+    if (f) {
+      const otherId = removedByUserId === f.requester_id ? f.addressee_id : f.requester_id
+      this.logAction('FRIEND_REMOVED', removedByUserId || 'unknown', { 
+        friendship_id: friendshipId, 
+        other_user_id: otherId, 
+        other_username: getUsernameById(otherId) 
+      })
+    }
     this.friendships = this.friendships.filter(f => f.id !== friendshipId)
     this.notify()
   }
@@ -200,11 +251,13 @@ class DevStore {
       !((f.requester_id === blockerId && f.addressee_id === blockedId) ||
         (f.requester_id === blockedId && f.addressee_id === blockerId))
     )
+    this.logAction('USER_BLOCKED', blockerId, { blocked_user_id: blockedId, blocked_username: getUsernameById(blockedId) })
     this.notify()
   }
 
   unblockUser(blockerId: string, blockedId: string) {
     this.blockedUsers.get(blockerId)?.delete(blockedId)
+    this.logAction('USER_UNBLOCKED', blockerId, { unblocked_user_id: blockedId, unblocked_username: getUsernameById(blockedId) })
     this.notify()
   }
 
@@ -227,6 +280,7 @@ class DevStore {
       created_at: new Date().toISOString(),
     }
     this.channelMessages.push(msg)
+    this.logAction('CHANNEL_MESSAGE_SENT', senderId, { channel_id: channelId, message_id: msg.id, content_length: content.length })
     this.notify()
     return msg
   }
@@ -237,6 +291,7 @@ class DevStore {
 
   // Reset all data
   reset() {
+    console.log('[v0 DevStore] RESET_ALL_DATA', { timestamp: new Date().toISOString() })
     this.messages = []
     this.friendships = []
     this.channelMessages = []
