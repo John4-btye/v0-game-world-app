@@ -10,37 +10,38 @@ export interface FakeUser {
   isRealUser?: boolean
 }
 
+// Use UUID-like IDs to prevent collisions with real user IDs
 export const FAKE_USERS: FakeUser[] = [
   {
-    id: 'fake-user-1',
+    id: '00000000-0000-0000-0000-000000000001',
     username: 'shadowblade',
     display_name: 'ShadowBlade',
     avatar_url: null,
     status: 'online',
   },
   {
-    id: 'fake-user-2',
+    id: '00000000-0000-0000-0000-000000000002',
     username: 'pixelwarrior',
     display_name: 'PixelWarrior',
     avatar_url: null,
     status: 'online',
   },
   {
-    id: 'fake-user-3',
+    id: '00000000-0000-0000-0000-000000000003',
     username: 'nightowl_gamer',
     display_name: 'NightOwl',
     avatar_url: null,
     status: 'away',
   },
   {
-    id: 'fake-user-4',
+    id: '00000000-0000-0000-0000-000000000004',
     username: 'prosniper99',
     display_name: 'ProSniper99',
     avatar_url: null,
     status: 'offline',
   },
   {
-    id: 'fake-user-5',
+    id: '00000000-0000-0000-0000-000000000005',
     username: 'speedrunner',
     display_name: 'SpeedRunner',
     avatar_url: null,
@@ -75,11 +76,13 @@ export interface DevChannelMessage {
   created_at: string
 }
 
-// Helper to get username by ID
+// Helper to get username by ID (works with both fake and real users)
 function getUsernameById(id: string): string {
   const fakeUser = FAKE_USERS.find(u => u.id === id)
   if (fakeUser) return fakeUser.username
-  return id.startsWith('fake-') ? 'unknown_fake' : 'real_user'
+  // Check if it's a fake user UUID pattern
+  if (id.startsWith('00000000-0000-0000-0000-')) return 'unknown_fake'
+  return 'real_user'
 }
 
 // Global dev state (resets on page refresh)
