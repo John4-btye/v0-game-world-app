@@ -44,23 +44,34 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchRealUser = async () => {
       try {
+        console.log('[v0 DevUser] Fetching real user profile...')
         const res = await fetch('/api/user')
         if (res.ok) {
           const data = await res.json()
           if (data.profile) {
             const profile = data.profile as RealUserProfile
-            setRealUser({
+            const realUserData = {
               id: profile.id,
               username: profile.username || 'unknown',
               display_name: profile.display_name || profile.username || 'You',
               avatar_url: profile.avatar_url,
-              status: 'online',
+              status: 'online' as const,
               isRealUser: true,
+            }
+            console.log('[v0 DevUser] Real user loaded:', {
+              id: realUserData.id,
+              username: realUserData.username,
+              display_name: realUserData.display_name,
             })
+            setRealUser(realUserData)
+          } else {
+            console.log('[v0 DevUser] No profile found in response')
           }
+        } else {
+          console.log('[v0 DevUser] Failed to fetch user, status:', res.status)
         }
       } catch (error) {
-        console.log('[v0] Failed to fetch real user for dev context:', error)
+        console.log('[v0 DevUser] Error fetching real user:', error)
       }
     }
     fetchRealUser()
@@ -68,6 +79,17 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
   
   // Combine fake users with real user
   const allUsers = realUser ? [realUser, ...FAKE_USERS] : FAKE_USERS
+  
+  // Log merged user list when it changes
+  useEffect(() => {
+    if (realUser) {
+      console.log('[v0 DevUser] Merged user list:', allUsers.map(u => ({
+        id: u.id,
+        username: u.username,
+        isRealUser: u.isRealUser || false,
+      })))
+    }
+  }, [realUser, allUsers])
   
   // Subscribe to store changes for re-renders
   const storeVersion = useSyncExternalStore(
@@ -81,9 +103,22 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
       if (prev) {
         // Turning off dev mode - clear active dev user
         setActiveDevUser(null)
+        console.log('[v0 DevUser] Dev mode disabled')
+      } else {
+        console.log('[v0 DevUser] Dev mode enabled')
       }
       return !prev
     })
+  }, [])
+  
+  // Log when active user changes
+  const handleSetActiveDevUser = useCallback((user: FakeUser | null) => {
+    console.log('[v0 DevUser] Selected user:', user ? {
+      id: user.id,
+      username: user.username,
+      isRealUser: user.isRealUser || false,
+    } : 'None (using real auth)')
+    setActiveDevUser(user)
   }, [])
 
   const getUser = useCallback((id: string) => {
@@ -94,7 +129,7 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
   return (
     <DevUserContext.Provider value={{
       activeDevUser,
-      setActiveDevUser,
+      setActiveDevUser: handleSetActiveDevUser,
       isDevMode,
       toggleDevMode,
       fakeUsers: FAKE_USERS,
