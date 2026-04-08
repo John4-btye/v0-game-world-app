@@ -151,7 +151,7 @@ export function DevControlsPanel() {
               <option value="">-- None (Use Real Auth) --</option>
               {allUsers.map(user => (
                 <option key={user.id} value={user.id} className={user.isRealUser ? 'font-bold' : ''}>
-                  {user.isRealUser ? '★ ' : ''}{user.display_name} (@{user.username}){user.isRealUser ? ' (Real Account)' : ` - ${user.status}`}
+                  {user.isRealUser ? '★ YOU: ' : ''}{user.display_name} (@{user.username}){user.isRealUser ? ' [Real Account]' : ` - ${user.status}`}
                 </option>
               ))}
             </select>
