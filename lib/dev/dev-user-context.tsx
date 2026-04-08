@@ -1,14 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useSyncExternalStore, useEffect } from 'react'
-import { FAKE_USERS, FakeUser, devStore } from './fake-users'
-
-interface RealUserProfile {
-  id: string
-  username: string
-  display_name: string | null
-  avatar_url: string | null
-}
+import { FakeUser, devStore } from './fake-users'
 
 interface DevUserContextType {
   // Active simulated user (null = using real auth)
@@ -19,12 +12,14 @@ interface DevUserContextType {
   isDevMode: boolean
   toggleDevMode: () => void
   
-  // All users (fake + real)
-  fakeUsers: FakeUser[]
+  // All users from unified API (includes real + fake)
   allUsers: FakeUser[]
   
-  // Real authenticated user
+  // Real authenticated user (if logged in)
   realUser: FakeUser | null
+  
+  // Loading state
+  isLoading: boolean
   
   // Store subscription for re-renders
   storeVersion: number
@@ -38,58 +33,47 @@ const DevUserContext = createContext<DevUserContextType | null>(null)
 export function DevUserProvider({ children }: { children: React.ReactNode }) {
   const [activeDevUser, setActiveDevUser] = useState<FakeUser | null>(null)
   const [isDevMode, setIsDevMode] = useState(false)
+  const [allUsers, setAllUsers] = useState<FakeUser[]>([])
   const [realUser, setRealUser] = useState<FakeUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   
-  // Fetch real user profile on mount
+  // Fetch users from unified API on mount
   useEffect(() => {
-    const fetchRealUser = async () => {
+    const fetchUsers = async () => {
       try {
-        console.log('[v0 DevUser] Fetching real user profile...')
-        const res = await fetch('/api/user')
+        console.log('[v0 DevUser] Fetching users from /api/dev/users...')
+        const res = await fetch('/api/dev/users')
         if (res.ok) {
           const data = await res.json()
-          if (data.profile) {
-            const profile = data.profile as RealUserProfile
-            const realUserData = {
-              id: profile.id,
-              username: profile.username || 'unknown',
-              display_name: profile.display_name || profile.username || 'You',
-              avatar_url: profile.avatar_url,
-              status: 'online' as const,
-              isRealUser: true,
-            }
-            console.log('[v0 DevUser] Real user loaded:', {
-              id: realUserData.id,
-              username: realUserData.username,
-              display_name: realUserData.display_name,
-            })
-            setRealUser(realUserData)
+          const users = data.users as FakeUser[]
+          
+          console.log('[v0 DevUser] Fetched users:', users.map(u => ({
+            id: u.id,
+            username: u.username,
+            isRealUser: u.isRealUser || false,
+          })))
+          
+          setAllUsers(users)
+          
+          // Find and set the real user
+          const foundRealUser = users.find(u => u.isRealUser)
+          if (foundRealUser) {
+            console.log('[v0 DevUser] Real user identified:', foundRealUser.username)
+            setRealUser(foundRealUser)
           } else {
-            console.log('[v0 DevUser] No profile found in response')
+            console.log('[v0 DevUser] No real user in response (not logged in)')
           }
         } else {
-          console.log('[v0 DevUser] Failed to fetch user, status:', res.status)
+          console.log('[v0 DevUser] Failed to fetch users, status:', res.status)
         }
       } catch (error) {
-        console.log('[v0 DevUser] Error fetching real user:', error)
+        console.log('[v0 DevUser] Error fetching users:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
-    fetchRealUser()
+    fetchUsers()
   }, [])
-  
-  // Combine fake users with real user
-  const allUsers = realUser ? [realUser, ...FAKE_USERS] : FAKE_USERS
-  
-  // Log merged user list when it changes
-  useEffect(() => {
-    if (realUser) {
-      console.log('[v0 DevUser] Merged user list:', allUsers.map(u => ({
-        id: u.id,
-        username: u.username,
-        isRealUser: u.isRealUser || false,
-      })))
-    }
-  }, [realUser, allUsers])
   
   // Subscribe to store changes for re-renders
   const storeVersion = useSyncExternalStore(
@@ -122,9 +106,8 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const getUser = useCallback((id: string) => {
-    if (realUser && realUser.id === id) return realUser
-    return FAKE_USERS.find(u => u.id === id)
-  }, [realUser])
+    return allUsers.find(u => u.id === id)
+  }, [allUsers])
 
   return (
     <DevUserContext.Provider value={{
@@ -132,9 +115,9 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
       setActiveDevUser: handleSetActiveDevUser,
       isDevMode,
       toggleDevMode,
-      fakeUsers: FAKE_USERS,
       allUsers,
       realUser,
+      isLoading,
       storeVersion,
       getUser,
     }}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDevUser } from '@/lib/dev/dev-user-context'
 import { devStore } from '@/lib/dev/fake-users'
 import { Button } from '@/components/ui/button'
@@ -12,11 +12,19 @@ export function DevControlsPanel() {
     activeDevUser, 
     setActiveDevUser,
     allUsers,
-    realUser,
+    isLoading,
     getUser,
   } = useDevUser()
   
-  const [targetUser, setTargetUser] = useState(allUsers[1]?.id || '')
+  const [targetUser, setTargetUser] = useState('')
+  
+  // Set initial target user when users are loaded
+  useEffect(() => {
+    if (allUsers.length > 1 && !targetUser) {
+      // Default to second user (first fake user if real user exists)
+      setTargetUser(allUsers[1]?.id || allUsers[0]?.id || '')
+    }
+  }, [allUsers, targetUser])
   const [messageContent, setMessageContent] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -135,6 +143,12 @@ export function DevControlsPanel() {
 
       {expanded && (
         <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+          {isLoading ? (
+            <div className="text-center py-4">
+              <p className="text-xs text-muted-foreground">Loading users...</p>
+            </div>
+          ) : (
+          <>
           {/* User Switcher */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
@@ -329,6 +343,8 @@ export function DevControlsPanel() {
             <p className={`text-xs text-center ${status.includes('Error') || status.includes('Could not') ? 'text-red-500' : 'text-green-500'}`}>
               {status}
             </p>
+          )}
+          </>
           )}
         </div>
       )}
