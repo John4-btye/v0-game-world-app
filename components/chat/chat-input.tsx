@@ -89,6 +89,7 @@ export function ChatInput({
     const text = content.trim()
     if (!text || sending) return
 
+    console.log('[v0] ChatInput sending message:', { channelId, content: text })
     setSending(true)
     try {
       const res = await fetch(`/api/channels/${channelId}/messages`, {
@@ -96,11 +97,15 @@ export function ChatInput({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: text }),
       })
+      const responseData = await res.json()
+      console.log('[v0] ChatInput response:', { ok: res.ok, status: res.status, data: responseData })
       if (res.ok) {
         setContent('')
         onMessageSent?.()
         inputRef.current?.focus()
       }
+    } catch (error) {
+      console.log('[v0] ChatInput error:', error)
     } finally {
       setSending(false)
     }
