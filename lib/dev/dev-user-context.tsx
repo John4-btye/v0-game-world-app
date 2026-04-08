@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useSyncExternalStore, useEffect } from 'react'
-import { FakeUser, devStore } from './fake-users'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { FakeUser } from './fake-users'
 
 interface DevUserContextType {
   // Active simulated user (null = using real auth)
@@ -20,9 +20,6 @@ interface DevUserContextType {
   
   // Loading state
   isLoading: boolean
-  
-  // Store subscription for re-renders
-  storeVersion: number
   
   // Helper to get user by ID
   getUser: (id: string) => FakeUser | undefined
@@ -74,13 +71,6 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
     }
     fetchUsers()
   }, [])
-  
-  // Subscribe to store changes for re-renders
-  const storeVersion = useSyncExternalStore(
-    devStore.subscribe.bind(devStore),
-    () => Date.now(), // Trigger re-render on any change
-    () => 0
-  )
 
   const toggleDevMode = useCallback(() => {
     setIsDevMode(prev => {
@@ -118,7 +108,6 @@ export function DevUserProvider({ children }: { children: React.ReactNode }) {
       allUsers,
       realUser,
       isLoading,
-      storeVersion,
       getUser,
     }}>
       {children}

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useDevUser } from '@/lib/dev/dev-user-context'
-import { devStore } from '@/lib/dev/fake-users'
 import { Button } from '@/components/ui/button'
+import { mutate } from 'swr'
 
 export function DevControlsPanel() {
   const { 
@@ -26,8 +26,51 @@ export function DevControlsPanel() {
     }
   }, [allUsers, targetUser])
   const [messageContent, setMessageContent] = useState('')
+  const [channelId, setChannelId] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [pendingRequests, setPendingRequests] = useState<Array<{ id: string; requester_id: string; friend_profile?: { display_name?: string; username?: string } }>>([])
+  const [friends, setFriends] = useState<Array<{ id: string; friend_profile?: { id: string; display_name?: string; username?: string } }>>([])
+  const [isTargetBlocked, setIsTargetBlocked] = useState(false)
+
+  // Fetch friend data when active user changes
+  useEffect(() => {
+    if (!activeDevUser) {
+      setPendingRequests([])
+      setFriends([])
+      return
+    }
+    
+    const fetchFriendData = async () => {
+      try {
+        // Fetch pending requests
+        const pendingRes = await fetch('/api/friends?status=pending')
+        if (pendingRes.ok) {
+          const data = await pendingRes.json()
+          // Filter to only show requests TO the active user
+          setPendingRequests(data.filter((f: { is_requester: boolean }) => !f.is_requester))
+        }
+        
+        // Fetch accepted friends
+        const friendsRes = await fetch('/api/friends?status=accepted')
+        if (friendsRes.ok) {
+          const data = await friendsRes.json()
+          setFriends(data)
+        }
+
+        // Fetch blocked status
+        const blockedRes = await fetch('/api/friends?status=blocked')
+        if (blockedRes.ok) {
+          const data = await blockedRes.json()
+          setIsTargetBlocked(data.some((f: { friend_profile?: { id: string } }) => f.friend_profile?.id === targetUser))
+        }
+      } catch (error) {
+        console.log('[v0 DevControls] Error fetching friend data:', error)
+      }
+    }
+    
+    fetchFriendData()
+  }, [activeDevUser, targetUser, status]) // Re-fetch when status changes (after actions)
 
   if (!isDevMode) {
     return (
@@ -44,73 +87,115 @@ export function DevControlsPanel() {
     )
   }
 
-  const showStatus = (msg: string, isError = false) => {
+  const showStatus = (msg: string) => {
     setStatus(msg)
     setTimeout(() => setStatus(null), 3000)
   }
 
-  const handleSendMessage = () => {
+  const callDevAction = async (action: string, extra: Record<string, string> = {}) => {
+    try {
+      const res = await fetch('/api/dev/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          sender_id: activeDevUser?.id,
+          target_id: targetUser,
+          ...extra,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        showStatus(`Error: ${data.error}`)
+        return null
+      }
+      return data
+    } catch (error) {
+      console.log('[v0 DevControls] API error:', error)
+      showStatus('Error: Network request failed')
+      return null
+    }
+  }
+
+  const handleSendMessage = async () => {
     if (!activeDevUser || !targetUser || !messageContent.trim()) {
-      showStatus('Select a user and enter a message', true)
+      showStatus('Select a user and enter a message')
       return
     }
-    devStore.sendMessage(activeDevUser.id, targetUser, messageContent.trim())
-    setMessageContent('')
-    showStatus('Message sent!')
+    const result = await callDevAction('send_dm', { content: messageContent.trim() })
+    if (result?.success) {
+      setMessageContent('')
+      showStatus('Message sent!')
+      mutate('/api/dm') // Refresh DM list
+    }
   }
 
-  const handleSendFriendRequest = () => {
+  const handleSendFriendRequest = async () => {
     if (!activeDevUser || !targetUser) {
-      showStatus('Select a user first', true)
+      showStatus('Select a user first')
       return
     }
-    const result = devStore.sendFriendRequest(activeDevUser.id, targetUser)
-    if (result) {
+    const result = await callDevAction('send_friend_request')
+    if (result?.success) {
       showStatus('Friend request sent!')
-    } else {
-      showStatus('Could not send request (blocked or exists)', true)
     }
   }
 
-  const handleBlockUser = () => {
+  const handleBlockUser = async () => {
     if (!activeDevUser || !targetUser) {
-      showStatus('Select a user first', true)
+      showStatus('Select a user first')
       return
     }
-    devStore.blockUser(activeDevUser.id, targetUser)
-    showStatus('User blocked!')
+    const result = await callDevAction('block_user')
+    if (result?.success) {
+      showStatus('User blocked!')
+    }
   }
 
-  const handleUnblockUser = () => {
+  const handleUnblockUser = async () => {
     if (!activeDevUser || !targetUser) {
-      showStatus('Select a user first', true)
+      showStatus('Select a user first')
       return
     }
-    devStore.unblockUser(activeDevUser.id, targetUser)
-    showStatus('User unblocked!')
+    const result = await callDevAction('unblock_user')
+    if (result?.success) {
+      showStatus('User unblocked!')
+    }
   }
 
-  const handleSendChannelMessage = () => {
-    if (!activeDevUser || !messageContent.trim()) {
-      showStatus('Select a user and enter a message', true)
+  const handleSendChannelMessage = async () => {
+    if (!activeDevUser || !messageContent.trim() || !channelId.trim()) {
+      showStatus('Select a user, enter channel ID, and message')
       return
     }
-    devStore.sendChannelMessage('test-channel', activeDevUser.id, messageContent.trim())
-    setMessageContent('')
-    showStatus('Channel message sent!')
+    const result = await callDevAction('send_channel_message', { content: messageContent.trim(), channel_id: channelId.trim() })
+    if (result?.success) {
+      setMessageContent('')
+      showStatus('Channel message sent!')
+    }
+  }
+
+  const handleAcceptRequest = async (friendshipId: string) => {
+    const result = await callDevAction('accept_friend_request', { target_id: friendshipId })
+    if (result?.success) {
+      showStatus('Friend request accepted!')
+    }
+  }
+
+  const handleRejectRequest = async (friendshipId: string) => {
+    const result = await callDevAction('reject_friend_request', { target_id: friendshipId })
+    if (result?.success) {
+      showStatus('Friend request rejected!')
+    }
   }
 
   const handleReset = () => {
-    devStore.reset()
     setActiveDevUser(null)
-    showStatus('Dev data reset!')
+    showStatus('Dev user cleared!')
   }
 
   // Get target user info
   const targetUserInfo = getUser(targetUser)
-  const isTargetBlocked = activeDevUser ? devStore.isBlocked(activeDevUser.id, targetUser) : false
-  const friendships = activeDevUser ? devStore.getFriendships(activeDevUser.id) : []
-  const pendingRequests = activeDevUser ? devStore.getPendingRequests(activeDevUser.id) : []
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-80 rounded-xl border border-yellow-500/50 bg-card shadow-xl">
@@ -231,6 +316,20 @@ export function DevControlsPanel() {
                 />
               </div>
 
+              {/* Channel ID Input */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  Channel ID (for channel messages)
+                </label>
+                <input
+                  type="text"
+                  value={channelId}
+                  onChange={(e) => setChannelId(e.target.value)}
+                  placeholder="Paste channel UUID..."
+                  className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground font-mono text-xs"
+                />
+              </div>
+
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -274,54 +373,41 @@ export function DevControlsPanel() {
                     Pending Friend Requests ({pendingRequests.length})
                   </p>
                   <div className="space-y-1">
-                    {pendingRequests.map(req => {
-                      const fromUser = getUser(req.requester_id)
-                      return (
-                        <div key={req.id} className="flex items-center justify-between rounded bg-secondary p-2">
-                          <span className="text-xs">{fromUser?.display_name || 'Unknown'}</span>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => {
-                                devStore.acceptFriendRequest(req.id)
-                                showStatus('Friend request accepted!')
-                              }}
-                              className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-500 hover:bg-green-500/30"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              onClick={() => {
-                                devStore.rejectFriendRequest(req.id)
-                                showStatus('Friend request rejected!')
-                              }}
-                              className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-500 hover:bg-red-500/30"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                    {pendingRequests.map(req => (
+                      <div key={req.id} className="flex items-center justify-between rounded bg-secondary p-2">
+                        <span className="text-xs">{req.friend_profile?.display_name || req.friend_profile?.username || 'Unknown'}</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleAcceptRequest(req.id)}
+                            className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-500 hover:bg-green-500/30"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleRejectRequest(req.id)}
+                            className="rounded bg-red-500/20 px-2 py-1 text-xs text-red-500 hover:bg-red-500/30"
+                          >
+                            Reject
+                          </button>
                         </div>
-                      )
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {/* Friends List */}
-              {friendships.filter(f => f.status === 'accepted').length > 0 && (
+              {friends.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-2">
-                    Friends ({friendships.filter(f => f.status === 'accepted').length})
+                    Friends ({friends.length})
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {friendships.filter(f => f.status === 'accepted').map(f => {
-                      const friendId = f.requester_id === activeDevUser.id ? f.addressee_id : f.requester_id
-                      const friend = getUser(friendId)
-                      return (
-                        <span key={f.id} className={`rounded-full px-2 py-1 text-xs ${friend?.isRealUser ? 'bg-green-500/20 text-green-500' : 'bg-primary/20 text-primary'}`}>
-                          {friend?.isRealUser ? '★ ' : ''}{friend?.display_name || 'Unknown'}
-                        </span>
-                      )
-                    })}
+                    {friends.map(f => (
+                      <span key={f.id} className="rounded-full px-2 py-1 text-xs bg-primary/20 text-primary">
+                        {f.friend_profile?.display_name || f.friend_profile?.username || 'Unknown'}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}

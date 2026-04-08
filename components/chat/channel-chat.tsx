@@ -5,7 +5,6 @@ import useSWR from 'swr'
 import { createClient } from '@/lib/supabase/client'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
-import { DevChannelMessages } from '@/components/dev/dev-messages-viewer'
 import type { Message } from '@/lib/types'
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json()).then((data) => {
@@ -116,9 +115,6 @@ export function ChannelChat({
           </div>
         )}
         <div ref={bottomRef} />
-        
-        {/* Dev Mode Messages */}
-        <DevChannelMessages channelId={channelId} />
       </div>
 
       {/* Input */}
