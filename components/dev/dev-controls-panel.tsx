@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useDevUser } from '@/lib/dev/dev-user-context'
-import { devStore, FAKE_USERS } from '@/lib/dev/fake-users'
+import { devStore } from '@/lib/dev/fake-users'
 import { Button } from '@/components/ui/button'
 
 export function DevControlsPanel() {
@@ -11,11 +11,12 @@ export function DevControlsPanel() {
     toggleDevMode, 
     activeDevUser, 
     setActiveDevUser,
-    fakeUsers,
-    getFakeUser,
+    allUsers,
+    realUser,
+    getUser,
   } = useDevUser()
   
-  const [targetUser, setTargetUser] = useState(fakeUsers[1]?.id || '')
+  const [targetUser, setTargetUser] = useState(allUsers[1]?.id || '')
   const [messageContent, setMessageContent] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -98,7 +99,7 @@ export function DevControlsPanel() {
   }
 
   // Get target user info
-  const targetUserInfo = getFakeUser(targetUser)
+  const targetUserInfo = getUser(targetUser)
   const isTargetBlocked = activeDevUser ? devStore.isBlocked(activeDevUser.id, targetUser) : false
   const friendships = activeDevUser ? devStore.getFriendships(activeDevUser.id) : []
   const pendingRequests = activeDevUser ? devStore.getPendingRequests(activeDevUser.id) : []
@@ -142,15 +143,15 @@ export function DevControlsPanel() {
             <select
               value={activeDevUser?.id || ''}
               onChange={(e) => {
-                const user = fakeUsers.find(u => u.id === e.target.value)
+                const user = allUsers.find(u => u.id === e.target.value)
                 setActiveDevUser(user || null)
               }}
               className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground"
             >
               <option value="">-- None (Use Real Auth) --</option>
-              {fakeUsers.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.display_name} (@{user.username}) - {user.status}
+              {allUsers.map(user => (
+                <option key={user.id} value={user.id} className={user.isRealUser ? 'font-bold' : ''}>
+                  {user.isRealUser ? '★ ' : ''}{user.display_name} (@{user.username}){user.isRealUser ? ' (Real Account)' : ` - ${user.status}`}
                 </option>
               ))}
             </select>
@@ -159,14 +160,23 @@ export function DevControlsPanel() {
           {activeDevUser && (
             <>
               {/* Current User Info */}
-              <div className="rounded-lg bg-primary/10 p-3">
+              <div className={`rounded-lg p-3 ${activeDevUser.isRealUser ? 'bg-green-500/10 border border-green-500/30' : 'bg-primary/10'}`}>
                 <p className="text-xs text-muted-foreground mb-1">Acting as:</p>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
-                    {activeDevUser.display_name[0]}
-                  </div>
+                  {activeDevUser.avatar_url ? (
+                    <img src={activeDevUser.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${activeDevUser.isRealUser ? 'bg-green-500/20 text-green-500' : 'bg-primary/20 text-primary'}`}>
+                      {activeDevUser.display_name[0]}
+                    </div>
+                  )}
                   <div>
-                    <p className="text-sm font-medium">{activeDevUser.display_name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium">{activeDevUser.display_name}</p>
+                      {activeDevUser.isRealUser && (
+                        <span className="rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-green-500">REAL</span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">@{activeDevUser.username}</p>
                   </div>
                 </div>
@@ -182,9 +192,9 @@ export function DevControlsPanel() {
                   onChange={(e) => setTargetUser(e.target.value)}
                   className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground"
                 >
-                  {fakeUsers.filter(u => u.id !== activeDevUser.id).map(user => (
+                  {allUsers.filter(u => u.id !== activeDevUser.id).map(user => (
                     <option key={user.id} value={user.id}>
-                      {user.display_name} (@{user.username})
+                      {user.isRealUser ? '★ ' : ''}{user.display_name} (@{user.username}){user.isRealUser ? ' (Real)' : ''}
                     </option>
                   ))}
                 </select>
@@ -251,7 +261,7 @@ export function DevControlsPanel() {
                   </p>
                   <div className="space-y-1">
                     {pendingRequests.map(req => {
-                      const fromUser = getFakeUser(req.requester_id)
+                      const fromUser = getUser(req.requester_id)
                       return (
                         <div key={req.id} className="flex items-center justify-between rounded bg-secondary p-2">
                           <span className="text-xs">{fromUser?.display_name || 'Unknown'}</span>
@@ -291,10 +301,10 @@ export function DevControlsPanel() {
                   <div className="flex flex-wrap gap-1">
                     {friendships.filter(f => f.status === 'accepted').map(f => {
                       const friendId = f.requester_id === activeDevUser.id ? f.addressee_id : f.requester_id
-                      const friend = getFakeUser(friendId)
+                      const friend = getUser(friendId)
                       return (
-                        <span key={f.id} className="rounded-full bg-primary/20 px-2 py-1 text-xs text-primary">
-                          {friend?.display_name || 'Unknown'}
+                        <span key={f.id} className={`rounded-full px-2 py-1 text-xs ${friend?.isRealUser ? 'bg-green-500/20 text-green-500' : 'bg-primary/20 text-primary'}`}>
+                          {friend?.isRealUser ? '★ ' : ''}{friend?.display_name || 'Unknown'}
                         </span>
                       )
                     })}
