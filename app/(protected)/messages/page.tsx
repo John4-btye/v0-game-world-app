@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { DevConversationsList } from '@/components/dev/dev-messages-viewer'
 
 interface ConversationItem {
   id: string
@@ -44,6 +45,9 @@ export default function MessagesPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-foreground">Messages</h1>
+      
+      {/* Dev Mode Conversations */}
+      <DevConversationsList />
 
       {loading ? (
         <div className="rounded-xl border border-border bg-card p-8 text-center">
