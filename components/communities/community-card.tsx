@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { Community } from '@/lib/types'
+import type { CommunitySummary } from '@/lib/types'
 import { getGameImage } from '@/lib/game-images'
 
-export function CommunityCard({ community }: { community: Community }) {
+export function CommunityCard({ community }: { community: CommunitySummary }) {
   const [imgError, setImgError] = useState(false)
   const visibleTags = community.game_tags?.slice(0, 4) ?? []
   const extraCount = (community.game_tags?.length ?? 0) - visibleTags.length
@@ -53,6 +53,20 @@ export function CommunityCard({ community }: { community: Community }) {
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground leading-relaxed">
             {community.description}
           </p>
+          {/* Member count */}
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {community.member_count ?? 0} members
+          </p>
+          {/* Last message preview */}
+          {community.last_message ? (
+            <p className="mt-1 text-xs text-foreground/80 truncate">
+              {community.last_message}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              No messages yet
+            </p>
+          )}
         </div>
       </div>
 

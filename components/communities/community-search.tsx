@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { Community } from '@/lib/types'
+import type { CommunitySummary } from '@/lib/types'
 import { CommunityCard } from './community-card'
 
 const PLATFORM_FILTERS = [
@@ -34,7 +34,7 @@ export function CommunitySearch() {
   const [query, setQuery] = useState('')
   const [platform, setPlatform] = useState('')
   const [tag, setTag] = useState('')
-  const [communities, setCommunities] = useState<Community[]>([])
+  const [communities, setCommunities] = useState<CommunitySummary[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchCommunities = useCallback(async () => {

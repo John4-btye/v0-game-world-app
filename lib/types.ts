@@ -31,7 +31,22 @@ export interface Community {
   created_by: string | null
   created_at: string
   member_count?: number // virtual, from aggregation
+  last_message?: string | null // virtual, from aggregation
+  last_message_time?: string | null // virtual, from aggregation
 }
+
+export type CommunitySummary = Pick<
+  Community,
+  | 'id'
+  | 'name'
+  | 'slug'
+  | 'description'
+  | 'icon_url'
+  | 'game_tags'
+  | 'member_count'
+  | 'last_message'
+  | 'last_message_time'
+>
 
 // --- Community Members ---
 export type MemberRole = 'member' | 'moderator' | 'admin'
