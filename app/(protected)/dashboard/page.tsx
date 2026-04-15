@@ -7,6 +7,8 @@ import { TestBotPanel } from '@/components/dev/test-bot-panel'
 import { RecentConversations } from '@/components/dashboard/recent-conversations'
 import { SquadFinder } from '@/components/dashboard/squad-finder'
 import { SmartRecommendations } from '@/components/dashboard/smart-recommendations'
+import { JumpBackInClient } from '@/components/dashboard/jump-back-in-client'
+import { DashboardStats } from '@/components/dashboard/dashboard-stats'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -119,6 +121,9 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Quick Stats Bar */}
+      <DashboardStats />
 
       {/* Active Right Now - Hot Section */}
       {activeCommunities.length > 0 && (
@@ -247,11 +252,12 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Activity Feed */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <LiveActivityFeed communityIds={memberCommunityIds} />
+          <LiveActivityFeed />
         </div>
 
         {/* Right Column - Friends, Squad & Conversations */}
         <div className="flex flex-col gap-4">
+          <JumpBackInClient />
           <SquadFinder />
           <OnlineFriends />
           <RecentConversations />
