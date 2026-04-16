@@ -16,16 +16,36 @@ export default async function ProfilePage() {
     .select('*')
     .eq('id', user.id)
     .single()
+  const profileRow = profile as
+    | Partial<{
+        display_name: string | null
+        avatar_url: string | null
+        username: string | null
+        bio: string | null
+        favorite_games: unknown
+        platforms: unknown
+        play_style: unknown
+        active_hours: unknown
+      }>
+    | null
 
   // Get user metadata from auth (Discord provides this)
   const meta = user.user_metadata ?? {}
   const displayName =
-    profile?.display_name || meta.full_name || meta.name || meta.custom_claims?.global_name || 'Gamer'
+    profileRow?.display_name ||
+    meta.full_name ||
+    meta.name ||
+    meta.custom_claims?.global_name ||
+    'Gamer'
   const avatarUrl =
-    profile?.avatar_url || meta.avatar_url || meta.picture || null
+    profileRow?.avatar_url || meta.avatar_url || meta.picture || null
   const username =
-    profile?.username || meta.preferred_username || meta.user_name || user.email?.split('@')[0] || 'user'
-  const bio = profile?.bio || null
+    profileRow?.username ||
+    meta.preferred_username ||
+    meta.user_name ||
+    user.email?.split('@')[0] ||
+    'user'
+  const bio = profileRow?.bio || null
   const provider = user.app_metadata?.provider ?? 'unknown'
   const createdAt = new Date(user.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -36,7 +56,7 @@ export default async function ProfilePage() {
   // Get communities the user has joined
   const { data: memberships } = await supabase
     .from('community_members')
-    .select('community_id, communities(name, slug, icon_url)')
+    .select('community_id, communities(name, slug, icon_url, game_tags)')
     .eq('user_id', user.id)
     .limit(10)
 
@@ -50,14 +70,27 @@ export default async function ProfilePage() {
   // Get user's gaming activity - extract favorite games from communities
   const gameTagsFromCommunities: string[] = []
   memberships?.forEach((m: Record<string, unknown>) => {
-    const comm = m.communities as { game_tags?: string[] } | null
+    const comm = m.communities as { game_tags?: string[] | null } | null
     if (comm?.game_tags) gameTagsFromCommunities.push(...comm.game_tags)
   })
-  const favoriteGames = [...new Set(gameTagsFromCommunities)].slice(0, 5)
-  
+
+  const favoriteGamesFromProfile = Array.isArray(profileRow?.favorite_games)
+    ? (profileRow?.favorite_games.filter((g): g is string => typeof g === 'string') ?? [])
+    : []
+
+  const favoriteGames: string[] =
+    favoriteGamesFromProfile.length > 0
+      ? favoriteGamesFromProfile
+      : [...new Set(gameTagsFromCommunities)].slice(0, 5)
+
+  const platforms = Array.isArray(profileRow?.platforms)
+    ? (profileRow?.platforms.filter((p): p is string => typeof p === 'string') ?? [])
+    : []
+	  
   // Estimate play style based on community types (placeholder)
-  const playStyle = profile?.play_style || 'casual'
-  const activeHours = profile?.active_hours || 'flexible'
+  const playStyle = typeof profileRow?.play_style === 'string' ? profileRow.play_style : 'casual'
+  const activeHours =
+    typeof profileRow?.active_hours === 'string' ? profileRow.active_hours : 'flexible'
 
   return (
     <div className="flex flex-col gap-6">
@@ -81,6 +114,12 @@ export default async function ProfilePage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-bold text-foreground">{displayName}</h2>
             <p className="text-sm text-muted-foreground">@{username}</p>
+            <a
+              href="/settings"
+              className="mt-2 inline-block rounded-md bg-primary px-3 py-1.5 text-xs text-white hover:bg-primary/90"
+            >
+              Edit Profile
+            </a>
             {bio && (
               <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{bio}</p>
             )}
@@ -124,6 +163,19 @@ export default async function ProfilePage() {
               <p className="text-xs text-muted-foreground italic">Join communities to show your favorite games</p>
             )}
           </div>
+
+          {profile?.looking_for_squad && (
+            <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <p className="text-xs font-semibold text-primary">
+                Looking for squad
+              </p>
+              {profile.squad_message && (
+                <p className="mt-1 text-sm text-foreground/80">
+                  {profile.squad_message}
+                </p>
+              )}
+            </div>
+          )}
           
           {/* Play Style */}
           <div>
@@ -140,6 +192,23 @@ export default async function ProfilePage() {
               </span>
             </div>
           </div>
+
+          {/* Platforms */}
+          {platforms.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Platforms</p>
+              <div className="flex flex-wrap gap-2">
+                {platforms.map((p) => (
+                  <span
+                    key={p}
+                    className="rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
+                  >
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Active Hours */}
           <div>
