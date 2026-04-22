@@ -11,11 +11,18 @@ export default async function ProfilePage() {
   if (!user) redirect('/auth/login')
 
   // Get profile from DB
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
+  if (profileError || !profile) {
+    return (
+      <div className="text-muted-foreground">
+        Profile not found
+      </div>
+    )
+  }
   const profileRow = profile as
     | Partial<{
         display_name: string | null
@@ -26,6 +33,8 @@ export default async function ProfilePage() {
         platforms: unknown
         play_style: unknown
         active_hours: unknown
+        looking_for_squad: boolean | null
+        squad_message: string | null
       }>
     | null
 
@@ -147,39 +156,29 @@ export default async function ProfilePage() {
       <div className="rounded-lg border border-border bg-card p-6">
         <h3 className="text-sm font-semibold text-foreground mb-4">Gamer Identity</h3>
         
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Favorite Games */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">Favorite Games</p>
-            {favoriteGames.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {favoriteGames.map((game, i) => (
-                  <span key={i} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                    {game}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">Join communities to show your favorite games</p>
-            )}
-          </div>
-
-          {profile?.looking_for_squad && (
-            <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
-              <p className="text-xs font-semibold text-primary">
-                Looking for squad
-              </p>
-              {profile.squad_message && (
-                <p className="mt-1 text-sm text-foreground/80">
-                  {profile.squad_message}
-                </p>
-              )}
-            </div>
-          )}
-          
-          {/* Play Style */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">Play Style</p>
+	        <div className="grid gap-4 sm:grid-cols-2">
+	          {/* Favorite Games */}
+	          <div>
+	            <p className="text-xs text-muted-foreground mb-2">Favorite Games</p>
+	            {favoriteGames.length > 0 ? (
+	              <div className="flex flex-wrap gap-1.5">
+	                {favoriteGames.map((game) => (
+	                  <span
+	                    key={game}
+	                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+	                  >
+	                    {game}
+	                  </span>
+	                ))}
+	              </div>
+	            ) : (
+	              <p className="text-xs text-muted-foreground italic">Join communities to show your favorite games</p>
+	            )}
+	          </div>
+	          
+	          {/* Play Style */}
+	          <div>
+	            <p className="text-xs text-muted-foreground mb-2">Play Style</p>
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${
                 playStyle === 'competitive' ? 'bg-red-500/20 text-red-500' :
@@ -223,14 +222,25 @@ export default async function ProfilePage() {
           </div>
           
           {/* Member of Communities */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">Communities</p>
-            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
-              {memberships?.length ?? 0} joined
-            </span>
-          </div>
-        </div>
-      </div>
+	          <div>
+	            <p className="text-xs text-muted-foreground mb-2">Communities</p>
+	            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+	              {memberships?.length ?? 0} joined
+	            </span>
+	          </div>
+	        </div>
+
+	        {profileRow?.looking_for_squad && (
+	          <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
+	            <p className="text-xs font-semibold text-primary">Looking for squad</p>
+	            {profileRow?.squad_message && (
+	              <p className="mt-1 text-sm text-foreground/80">
+	                {profileRow.squad_message}
+	              </p>
+	            )}
+	          </div>
+	        )}
+	      </div>
 
       {/* Linked account */}
       <div className="rounded-lg border border-border bg-card p-6">

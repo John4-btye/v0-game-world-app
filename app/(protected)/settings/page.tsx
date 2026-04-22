@@ -4,6 +4,20 @@ import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { GamerIdentityForm } from '@/components/profile/gamer-identity-form'
+
+type ProfileData = Partial<{
+  display_name: string | null
+  bio: string | null
+  is_over_16: boolean | null
+  discord_webhook_url: string | null
+  favorite_games: unknown
+  platforms: unknown
+  play_style: unknown
+  active_hours: unknown
+  looking_for_squad: boolean | null
+  squad_message: string | null
+}>
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
@@ -21,6 +35,7 @@ export default function SettingsPage() {
   const [webhookSaved, setWebhookSaved] = useState(false)
   const [webhookTesting, setWebhookTesting] = useState(false)
   const [webhookTestResult, setWebhookTestResult] = useState<'success' | 'error' | null>(null)
+  const [profileData, setProfileData] = useState<ProfileData | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -34,11 +49,12 @@ export default function SettingsPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, bio, is_over_16, discord_webhook_url')
+        .select('*')
         .eq('id', user.id)
         .single()
 
       if (profile) {
+        setProfileData(profile as ProfileData)
         setDisplayName(profile.display_name ?? '')
         setBio(profile.bio ?? '')
         setIsOver16(profile.is_over_16 ?? true)
@@ -150,6 +166,22 @@ export default function SettingsPage() {
           </button>
         </div>
       </section>
+
+	      {/* Gamer Identity */}
+	      {profileData && (
+	        <section className="rounded-lg border border-border bg-card p-6">
+	          <h2 className="text-lg font-semibold text-card-foreground">
+	            Gamer Identity
+	          </h2>
+	          <p className="mt-1 text-sm text-muted-foreground">
+	            Customize your gaming preferences and squad visibility.
+	          </p>
+
+	          <div className="mt-4">
+	            <GamerIdentityForm profile={profileData} />
+	          </div>
+	        </section>
+	      )}
 
       {/* Profile */}
       <section className="rounded-lg border border-border bg-card p-6">
