@@ -30,6 +30,7 @@ export function ChannelList({
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
   const [newChannelId, setNewChannelId] = useState<string | null>(null)
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Sync with props
@@ -50,6 +51,13 @@ export function ChannelList({
     }
   }, [newChannelId])
 
+  // Clear success message
+  useEffect(() => {
+    if (!createSuccess) return
+    const timer = setTimeout(() => setCreateSuccess(null), 2500)
+    return () => clearTimeout(timer)
+  }, [createSuccess])
+
   const handleCreate = async () => {
     const name = newName.trim()
     if (!name) return
@@ -66,6 +74,7 @@ export function ChannelList({
         const newChannel: Channel = { id: data.id, name, description: null, created_by: currentUserId }
         setChannels(prev => [...prev, newChannel])
         setNewChannelId(data.id)
+        setCreateSuccess(`Created #${name}`)
         setNewName('')
         setShowCreate(false)
         router.refresh()
@@ -126,10 +135,22 @@ export function ChannelList({
             disabled={creating || !newName.trim()}
             className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
           >
-            {creating ? '...' : 'Add'}
+            {creating ? 'Creating...' : 'Create'}
           </button>
         </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Press Enter or click Create
+        </p>
       </div>
+
+      {createSuccess && (
+        <div className="mb-2 flex items-center gap-2 rounded-md border border-border bg-primary/5 px-2 py-1 text-xs text-primary">
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="truncate">{createSuccess}</span>
+        </div>
+      )}
 
       {/* Channel list with animations */}
       <ul className="space-y-0.5">
