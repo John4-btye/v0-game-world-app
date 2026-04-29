@@ -10,7 +10,7 @@ export default async function AuthErrorPage({
   const params = await searchParams
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center bg-background p-6 md:p-10">
+    <div className="flex min-h-svh w-full items-center justify-center bg-transparent p-6 md:p-10">
       <div className="w-full max-w-sm">
         <Card className="border-border bg-card">
           <CardHeader>

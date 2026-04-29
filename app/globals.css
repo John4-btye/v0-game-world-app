@@ -134,10 +134,11 @@
     background-color: var(--background);
     /* App-wide blue/purple ambience that still respects the existing theme tokens. */
     background-image:
-      radial-gradient(900px 600px at 15% 10%, var(--color-glow-blue), transparent 60%),
-      radial-gradient(800px 520px at 85% 18%, var(--color-glow-purple), transparent 55%),
-      radial-gradient(700px 480px at 70% 92%, var(--color-glow-cyan), transparent 55%),
-      linear-gradient(180deg, transparent 0%, oklch(0.10 0.02 260 / 0.10) 100%);
+      linear-gradient(135deg, oklch(0.62 0.24 260 / 0.28) 0%, oklch(0.60 0.20 295 / 0.22) 45%, transparent 75%),
+      radial-gradient(1000px 700px at 12% 10%, var(--color-glow-blue), transparent 60%),
+      radial-gradient(900px 620px at 88% 18%, var(--color-glow-purple), transparent 58%),
+      radial-gradient(820px 520px at 70% 92%, var(--color-glow-cyan), transparent 58%),
+      linear-gradient(180deg, transparent 0%, oklch(0.10 0.02 260 / 0.18) 100%);
     background-attachment: fixed;
     background-repeat: no-repeat;
   }

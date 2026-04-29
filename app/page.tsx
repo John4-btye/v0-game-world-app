@@ -13,7 +13,7 @@ export default async function LandingPage() {
   if (user) redirect('/dashboard')
 
   return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6">
+    <main className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-transparent px-6">
       {/* Background glow effects */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-[500px] w-[600px] -translate-x-1/2 rounded-full bg-primary/10 blur-[120px]" />

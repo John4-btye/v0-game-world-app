@@ -22,7 +22,7 @@ export default async function ProtectedLayout({
 
   return (
     <DevUserProvider>
-      <div className="flex h-svh bg-background">
+      <div className="flex h-svh bg-transparent">
         <PresenceTracker />
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
