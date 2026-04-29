@@ -9,6 +9,7 @@ import { SquadFinder } from '@/components/dashboard/squad-finder'
 import { SmartRecommendations } from '@/components/dashboard/smart-recommendations'
 import { JumpBackInClient } from '@/components/dashboard/jump-back-in-client'
 import { DashboardStats } from '@/components/dashboard/dashboard-stats'
+import { UpcomingEvents } from '@/components/dashboard/upcoming-events'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -253,6 +254,7 @@ export default async function DashboardPage() {
         {/* Left Column - Activity Feed */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <LiveActivityFeed />
+          <UpcomingEvents />
         </div>
 
         {/* Right Column - Friends, Squad & Conversations */}
