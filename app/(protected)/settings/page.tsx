@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { GamerIdentityForm } from '@/components/profile/gamer-identity-form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BANNER_PRESETS, resolveBannerPreset, type BannerPreset } from '@/lib/profile-banner'
 
 type ProfileData = Partial<{
   display_name: string | null
@@ -18,6 +19,8 @@ type ProfileData = Partial<{
   active_hours: unknown
   looking_for_squad: boolean | null
   squad_message: string | null
+  banner_preset: string | null
+  banner_url: string | null
 }>
 
 export default function SettingsPage() {
@@ -37,6 +40,9 @@ export default function SettingsPage() {
   const [webhookTesting, setWebhookTesting] = useState(false)
   const [webhookTestResult, setWebhookTestResult] = useState<'success' | 'error' | null>(null)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const [bannerPreset, setBannerPreset] = useState<BannerPreset>('aurora')
+  const [bannerSaving, setBannerSaving] = useState(false)
+  const [bannerSaved, setBannerSaved] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -63,6 +69,7 @@ export default function SettingsPage() {
           setDisplayName(profile.display_name ?? '')
           setBio(profile.bio ?? '')
           setDiscordWebhook(profile.discord_webhook_url ?? '')
+          setBannerPreset(resolveBannerPreset(profile.banner_preset))
         } else {
           setProfileData(null)
         }
@@ -126,6 +133,22 @@ export default function SettingsPage() {
     } finally {
       setWebhookTesting(false)
       setTimeout(() => setWebhookTestResult(null), 5000)
+    }
+  }
+
+  const handleSaveBanner = async (nextPreset: BannerPreset) => {
+    setBannerPreset(nextPreset)
+    setBannerSaving(true)
+    setBannerSaved(false)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ banner_preset: nextPreset }),
+    })
+    setBannerSaving(false)
+    if (res.ok) {
+      setBannerSaved(true)
+      setTimeout(() => setBannerSaved(false), 2500)
     }
   }
 
@@ -313,6 +336,49 @@ export default function SettingsPage() {
                   </span>
                 </button>
               </div>
+
+              <div className="mt-6 border-t border-border pt-6">
+                <h3 className="text-sm font-semibold text-foreground">Profile Banner</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pick a banner color scheme for your profile.
+                </p>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {BANNER_PRESETS.map((p) => (
+                    <button
+                      key={p.key}
+                      onClick={() => handleSaveBanner(p.key)}
+                      disabled={bannerSaving}
+                      className={`group flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+                        bannerPreset === p.key
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-muted-foreground/30'
+                      } ${bannerSaving ? 'opacity-70' : ''}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{p.label}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {bannerPreset === p.key ? 'Selected' : 'Click to apply'}
+                        </p>
+                      </div>
+                      <div
+                        className="h-10 w-20 shrink-0 rounded-md border border-border/60"
+                        style={{ backgroundImage: p.css }}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    This updates your profile header banner.
+                  </p>
+                  {bannerSaved && (
+                    <span className="text-sm font-medium text-accent">Updated!</span>
+                  )}
+                </div>
+              </div>
             </section>
           </TabsContent>
 
@@ -366,5 +432,4 @@ export default function SettingsPage() {
     </div>
   )
 }
-
 

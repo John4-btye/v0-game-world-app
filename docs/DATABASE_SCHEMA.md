@@ -22,6 +22,8 @@ User profile information linked to Supabase Auth.
 | bio | text | User biography |
 | date_of_birth | date | User's date of birth |
 | is_over_16 | boolean | Age verification flag |
+| banner_preset | text | Profile banner color preset key |
+| banner_url | text | Optional custom banner image URL |
 | created_at | timestamptz | Account creation time |
 | updated_at | timestamptz | Last profile update |
 

@@ -11,6 +11,8 @@ export interface Profile {
   avatar_url: string | null
   bio: string | null
   is_over_16: boolean
+  banner_preset?: string | null
+  banner_url?: string | null
   linked_discord: string | null
   linked_google: string | null
   created_at: string

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getGameImage } from '@/lib/game-images'
+import { bannerCssForPreset } from '@/lib/profile-banner'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -35,6 +36,8 @@ export default async function ProfilePage() {
         active_hours: unknown
         looking_for_squad: boolean | null
         squad_message: string | null
+        banner_preset: string | null
+        banner_url: string | null
       }>
     | null
 
@@ -101,39 +104,54 @@ export default async function ProfilePage() {
   const activeHours =
     typeof profileRow?.active_hours === 'string' ? profileRow.active_hours : 'flexible'
 
+  const bannerUrl = profileRow?.banner_url || null
+  const bannerCss = bannerUrl ? null : bannerCssForPreset(profileRow?.banner_preset)
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
 
       {/* Profile card */}
-      <div className="rounded-lg border border-border bg-card p-6">
-        <div className="flex items-start gap-5">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={`${displayName}'s avatar`}
-              className="h-20 w-20 shrink-0 rounded-full border-2 border-primary/30 object-cover"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
-              {displayName[0]?.toUpperCase()}
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-foreground">{displayName}</h2>
-            <p className="text-sm text-muted-foreground">@{username}</p>
-            <a
-              href="/settings"
-              className="mt-2 inline-block rounded-md bg-primary px-3 py-1.5 text-xs text-white hover:bg-primary/90"
-            >
-              Edit Profile
-            </a>
-            {bio && (
-              <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{bio}</p>
-            )}
-          </div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div
+          className="relative h-28 w-full"
+          style={
+            bannerUrl
+              ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { backgroundImage: bannerCss }
+          }
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/45" />
         </div>
+
+        <div className="p-6 pt-0">
+          <div className="-mt-10 flex items-start gap-5">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={`${displayName}'s avatar`}
+                className="h-20 w-20 shrink-0 rounded-full border-2 border-primary/30 bg-card object-cover"
+                crossOrigin="anonymous"
+              />
+            ) : (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-primary/30 bg-card text-2xl font-bold text-primary">
+                {displayName[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1 pt-10">
+              <h2 className="text-lg font-bold text-foreground">{displayName}</h2>
+              <p className="text-sm text-muted-foreground">@{username}</p>
+              <a
+                href="/settings"
+                className="mt-2 inline-block rounded-md bg-primary px-3 py-1.5 text-xs text-white hover:bg-primary/90"
+              >
+                Edit Profile
+              </a>
+              {bio && (
+                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{bio}</p>
+              )}
+            </div>
+          </div>
 
         {/* Stats row */}
         <div className="mt-6 flex gap-6 border-t border-border pt-4">
@@ -149,6 +167,7 @@ export default async function ProfilePage() {
             <p className="text-lg font-bold text-foreground">{createdAt}</p>
             <p className="text-xs text-muted-foreground">Member Since</p>
           </div>
+        </div>
         </div>
       </div>
 
