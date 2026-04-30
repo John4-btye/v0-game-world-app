@@ -46,7 +46,7 @@ export function CommunitySearch() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const limit = 20
+  const limit = 21
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -209,7 +209,7 @@ export function CommunitySearch() {
           </Pagination>
 
           <p className="text-xs text-muted-foreground/60">
-            Showing {communities.length} communit{communities.length === 1 ? 'y' : 'ies'} (20 per page)
+            Showing {communities.length} communit{communities.length === 1 ? 'y' : 'ies'} (21 per page)
           </p>
         </div>
       )}

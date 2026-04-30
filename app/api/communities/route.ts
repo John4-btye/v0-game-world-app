@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1)
   const limit = Math.min(
     50,
-    Math.max(1, Number(searchParams.get('limit') ?? '20') || 20),
+    Math.max(1, Number(searchParams.get('limit') ?? '21') || 21),
   )
 
   const supabase = await createClient()
