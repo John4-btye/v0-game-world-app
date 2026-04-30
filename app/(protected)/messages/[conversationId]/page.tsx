@@ -51,13 +51,26 @@ export default function ConversationPage() {
         const p = partnerData as PartnerInfo
         setPartner(p)
 
-        // Check friendship status
-        const { data: friendship } = await supabase
+        // Check friendship status (two directed unique rows are possible, so query both).
+        const { data: friendships } = await supabase
           .from('friendships')
-          .select('status, requester_id')
+          .select('status')
           .or(`and(requester_id.eq.${user.id},addressee_id.eq.${p.id}),and(requester_id.eq.${p.id},addressee_id.eq.${user.id})`)
-          .maybeSingle()
-        if (friendship) setFriendStatus(friendship.status as 'pending' | 'accepted' | 'blocked')
+
+        const statuses = (friendships ?? [])
+          .map((f: any) => f.status)
+          .filter((s: any): s is 'pending' | 'accepted' | 'blocked' => typeof s === 'string')
+
+        const nextStatus: 'pending' | 'accepted' | 'blocked' | null =
+          statuses.includes('accepted')
+            ? 'accepted'
+            : statuses.includes('blocked')
+              ? 'blocked'
+              : statuses.includes('pending')
+                ? 'pending'
+                : null
+
+        setFriendStatus(nextStatus)
       }
     }
     init()
