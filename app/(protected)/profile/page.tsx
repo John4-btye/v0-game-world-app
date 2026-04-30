@@ -1,225 +1,261 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { getGameImage } from '@/lib/game-images'
-import { bannerCssForPreset } from '@/lib/profile-banner'
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { getGameImage } from '@/lib/game-images';
+import { bannerCssForPreset } from '@/lib/profile-banner';
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
+  const supabase = await createClient();
+
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
-  if (!user) redirect('/auth/login')
+  if (!user) redirect('/auth/login');
 
-  // Get profile from DB
+  // -------------------------
+  // Fetch profile
+  // -------------------------
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single()
-  if (profileError || !profile) {
-    return (
-      <div className="text-muted-foreground">
-        Profile not found
-      </div>
-    )
-  }
-  const profileRow = profile as
-    | Partial<{
-        display_name: string | null
-        avatar_url: string | null
-        username: string | null
-        bio: string | null
-        favorite_games: unknown
-        platforms: unknown
-        play_style: unknown
-        active_hours: unknown
-        looking_for_squad: boolean | null
-        squad_message: string | null
-        banner_preset: string | null
-        banner_url: string | null
-      }>
-    | null
+    .single();
 
-  // Get user metadata from auth (Discord provides this)
-  const meta = user.user_metadata ?? {}
+  if (profileError || !profile) {
+    return <div className="text-muted-foreground">Profile not found</div>;
+  }
+
+  const profileRow = profile as Partial<{
+    display_name: string | null;
+    avatar_url: string | null;
+    username: string | null;
+    bio: string | null;
+    favorite_games: unknown;
+    platforms: unknown;
+    play_style: unknown;
+    active_hours: unknown;
+    looking_for_squad: boolean | null;
+    squad_message: string | null;
+    banner_preset: string | null;
+    banner_url: string | null;
+  }>;
+
+  // -------------------------
+  // User metadata
+  // -------------------------
+  const meta = user.user_metadata ?? {};
+
   const displayName =
-    profileRow?.display_name ||
+    profileRow.display_name ||
     meta.full_name ||
     meta.name ||
-    meta.custom_claims?.global_name ||
-    'Gamer'
+    (meta as any)?.custom_claims?.global_name ||
+    'Gamer';
+
   const avatarUrl =
-    profileRow?.avatar_url || meta.avatar_url || meta.picture || null
+    profileRow.avatar_url || meta.avatar_url || meta.picture || null;
+
   const username =
-    profileRow?.username ||
+    profileRow.username ||
     meta.preferred_username ||
     meta.user_name ||
     user.email?.split('@')[0] ||
-    'user'
-  const bio = profileRow?.bio || null
-  const provider = user.app_metadata?.provider ?? 'unknown'
+    'user';
+
+  const bio = profileRow.bio || null;
+
+  const provider = user.app_metadata?.provider ?? 'unknown';
+
   const createdAt = new Date(user.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
+  });
 
-  // Get communities the user has joined
+  // -------------------------
+  // Memberships
+  // -------------------------
   const { data: memberships } = await supabase
     .from('community_members')
     .select('community_id, communities(name, slug, icon_url, game_tags)')
     .eq('user_id', user.id)
-    .limit(10)
+    .limit(10);
 
-  // Get friend count
+  // -------------------------
+  // Friend count
+  // -------------------------
   const { count: friendCount } = await supabase
     .from('friendships')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'accepted')
-    .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+    .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
 
-  // Get user's gaming activity - extract favorite games from communities
-  const gameTagsFromCommunities: string[] = []
-  memberships?.forEach((m: Record<string, unknown>) => {
-    const comm = m.communities as { game_tags?: string[] | null } | null
-    if (comm?.game_tags) gameTagsFromCommunities.push(...comm.game_tags)
-  })
+  // -------------------------
+  // Favorite games logic
+  // -------------------------
+  const gameTagsFromCommunities: string[] = [];
 
-  const favoriteGamesFromProfile = Array.isArray(profileRow?.favorite_games)
-    ? (profileRow?.favorite_games.filter((g): g is string => typeof g === 'string') ?? [])
-    : []
+  memberships?.forEach((m: any) => {
+    const comm = m.communities;
+    if (comm?.game_tags) {
+      gameTagsFromCommunities.push(...comm.game_tags);
+    }
+  });
 
-  const favoriteGames: string[] =
+  const favoriteGamesFromProfile = Array.isArray(profileRow.favorite_games)
+    ? profileRow.favorite_games.filter(
+        (g): g is string => typeof g === 'string'
+      )
+    : [];
+
+  const favoriteGames =
     favoriteGamesFromProfile.length > 0
       ? favoriteGamesFromProfile
-      : [...new Set(gameTagsFromCommunities)].slice(0, 5)
+      : [...new Set(gameTagsFromCommunities)].slice(0, 5);
 
-  const platforms = Array.isArray(profileRow?.platforms)
-    ? (profileRow?.platforms.filter((p): p is string => typeof p === 'string') ?? [])
-    : []
-	  
-  // Estimate play style based on community types (placeholder)
-  const playStyle = typeof profileRow?.play_style === 'string' ? profileRow.play_style : 'casual'
+  const platforms = Array.isArray(profileRow.platforms)
+    ? profileRow.platforms.filter((p): p is string => typeof p === 'string')
+    : [];
+
+  const playStyle =
+    typeof profileRow.play_style === 'string'
+      ? profileRow.play_style
+      : 'casual';
+
   const activeHours =
-    typeof profileRow?.active_hours === 'string' ? profileRow.active_hours : 'flexible'
+    typeof profileRow.active_hours === 'string'
+      ? profileRow.active_hours
+      : 'flexible';
 
-  const bannerUrl = profileRow?.banner_url || null
-  const bannerCss = bannerUrl ? null : bannerCssForPreset(profileRow?.banner_preset)
+  // -------------------------
+  // Banner logic
+  // -------------------------
+  const bannerUrl = profileRow.banner_url || null;
+  const bannerClass = bannerCssForPreset(profileRow.banner_preset);
 
+  // -------------------------
+  // Render
+  // -------------------------
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-foreground">Your Profile</h1>
 
-      {/* Profile card */}
+      {/* ========================= */}
+      {/* PROFILE CARD */}
+      {/* ========================= */}
       <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {/* Banner */}
         <div
-          className="relative h-28 w-full"
+          className={`relative h-28 w-full ${bannerUrl ? '' : bannerClass}`}
           style={
             bannerUrl
-              ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : { backgroundImage: bannerCss }
+              ? {
+                  backgroundImage: `url(${bannerUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : undefined
           }
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/45" />
         </div>
 
+        {/* Profile Content */}
         <div className="p-6 pt-0">
           <div className="-mt-10 flex items-start gap-5">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={`${displayName}'s avatar`}
-                className="h-20 w-20 shrink-0 rounded-full border-2 border-primary/30 bg-card object-cover"
-                crossOrigin="anonymous"
+                className="h-20 w-20 rounded-full border-2 border-primary/30 bg-card object-cover"
               />
             ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-primary/30 bg-card text-2xl font-bold text-primary">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-primary/30 bg-card text-2xl font-bold text-primary">
                 {displayName[0]?.toUpperCase()}
               </div>
             )}
+
             <div className="min-w-0 flex-1 pt-10">
-              <h2 className="text-lg font-bold text-foreground">{displayName}</h2>
+              <h2 className="text-lg font-bold">{displayName}</h2>
               <p className="text-sm text-muted-foreground">@{username}</p>
+
               <a
                 href="/settings"
-                className="mt-2 inline-block rounded-md bg-primary px-3 py-1.5 text-xs text-white hover:bg-primary/90"
+                className="mt-2 inline-block rounded-md bg-primary px-3 py-1.5 text-xs text-white"
               >
                 Edit Profile
               </a>
-              {bio && (
-                <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{bio}</p>
-              )}
+
+              {bio && <p className="mt-2 text-sm">{bio}</p>}
             </div>
           </div>
 
-        {/* Stats row */}
-        <div className="mt-6 flex gap-6 border-t border-border pt-4">
-          <div>
-            <p className="text-lg font-bold text-foreground">{memberships?.length ?? 0}</p>
-            <p className="text-xs text-muted-foreground">Communities</p>
+          {/* Stats */}
+          <div className="mt-6 flex gap-6 border-t pt-4">
+            <div>
+              <p className="text-lg font-bold">{memberships?.length ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Communities</p>
+            </div>
+
+            <div>
+              <p className="text-lg font-bold">{friendCount ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Friends</p>
+            </div>
+
+            <div>
+              <p className="text-lg font-bold">{createdAt}</p>
+              <p className="text-xs text-muted-foreground">Member Since</p>
+            </div>
           </div>
-          <div>
-            <p className="text-lg font-bold text-foreground">{friendCount ?? 0}</p>
-            <p className="text-xs text-muted-foreground">Friends</p>
-          </div>
-          <div>
-            <p className="text-lg font-bold text-foreground">{createdAt}</p>
-            <p className="text-xs text-muted-foreground">Member Since</p>
-          </div>
-        </div>
         </div>
       </div>
 
-      {/* Gamer Identity */}
-      <div className="rounded-lg border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Gamer Identity</h3>
-        
-	        <div className="grid gap-4 sm:grid-cols-2">
-	          {/* Favorite Games */}
-	          <div>
-	            <p className="text-xs text-muted-foreground mb-2">Favorite Games</p>
-	            {favoriteGames.length > 0 ? (
-	              <div className="flex flex-wrap gap-1.5">
-	                {favoriteGames.map((game) => (
-	                  <span
-	                    key={game}
-	                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-	                  >
-	                    {game}
-	                  </span>
-	                ))}
-	              </div>
-	            ) : (
-	              <p className="text-xs text-muted-foreground italic">Join communities to show your favorite games</p>
-	            )}
-	          </div>
-	          
-	          {/* Play Style */}
-	          <div>
-	            <p className="text-xs text-muted-foreground mb-2">Play Style</p>
-            <div className="flex items-center gap-2">
-              <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                playStyle === 'competitive' ? 'bg-red-500/20 text-red-500' :
-                playStyle === 'casual' ? 'bg-green-500/20 text-green-500' :
-                'bg-blue-500/20 text-blue-500'
-              }`}>
-                {playStyle === 'competitive' ? '🏆 Competitive' :
-                 playStyle === 'casual' ? '🎮 Casual' :
-                 '⚡ Flexible'}
-              </span>
-            </div>
+      {/* ========================= */}
+      {/* GAMER IDENTITY */}
+      {/* ========================= */}
+      <div className="rounded-lg border bg-card p-6">
+        <h3 className="mb-4 text-sm font-semibold">Gamer Identity</h3>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Favorite Games */}
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">Favorite Games</p>
+
+            {favoriteGames.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {favoriteGames.map((game) => (
+                  <span
+                    key={game}
+                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary"
+                  >
+                    {game}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs italic text-muted-foreground">
+                Join communities to show your favorite games
+              </p>
+            )}
+          </div>
+
+          {/* Play Style */}
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">Play Style</p>
+            <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs text-blue-500">
+              {playStyle}
+            </span>
           </div>
 
           {/* Platforms */}
           {platforms.length > 0 && (
             <div>
-              <p className="text-xs text-muted-foreground mb-2">Platforms</p>
+              <p className="mb-2 text-xs text-muted-foreground">Platforms</p>
               <div className="flex flex-wrap gap-2">
                 {platforms.map((p) => (
                   <span
                     key={p}
-                    className="rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
+                    className="rounded-full bg-secondary px-2 py-1 text-xs"
                   >
                     {p}
                   </span>
@@ -227,88 +263,27 @@ export default async function ProfilePage() {
               </div>
             </div>
           )}
-          
+
           {/* Active Hours */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Usually Active</p>
-            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground capitalize">
-              {activeHours === 'morning' ? '🌅 Morning' :
-               activeHours === 'afternoon' ? '☀️ Afternoon' :
-               activeHours === 'evening' ? '🌆 Evening' :
-               activeHours === 'night' ? '🌙 Night' :
-               '⏰ Flexible'}
+            <p className="mb-2 text-xs text-muted-foreground">Usually Active</p>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs capitalize">
+              {activeHours}
             </span>
           </div>
-          
-          {/* Member of Communities */}
-	          <div>
-	            <p className="text-xs text-muted-foreground mb-2">Communities</p>
-	            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
-	              {memberships?.length ?? 0} joined
-	            </span>
-	          </div>
-	        </div>
-
-	        {profileRow?.looking_for_squad && (
-	          <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
-	            <p className="text-xs font-semibold text-primary">Looking for squad</p>
-	            {profileRow?.squad_message && (
-	              <p className="mt-1 text-sm text-foreground/80">
-	                {profileRow.squad_message}
-	              </p>
-	            )}
-	          </div>
-	        )}
-	      </div>
-
-      {/* Linked account */}
-      <div className="rounded-lg border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground">Linked Account</h3>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#5865F2]/20">
-            <svg className="h-5 w-5 text-[#5865F2]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground capitalize">{provider}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-          </div>
-          <span className="ml-auto rounded-full bg-accent/20 px-3 py-1 text-xs font-medium text-accent">
-            Connected
-          </span>
         </div>
+
+        {profileRow.looking_for_squad && (
+          <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <p className="text-xs font-semibold text-primary">
+              Looking for squad
+            </p>
+            {profileRow.squad_message && (
+              <p className="text-sm">{profileRow.squad_message}</p>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Communities */}
-      {memberships && memberships.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-6">
-          <h3 className="text-sm font-semibold text-foreground">Your Communities</h3>
-          <div className="mt-3 flex flex-col gap-2">
-            {memberships.map((m: Record<string, unknown>) => {
-              const community = m.communities as { name: string; slug: string; icon_url: string | null } | null
-              if (!community) return null
-              const imgSrc = getGameImage(community.slug) || community.icon_url
-              return (
-                <a
-                  key={m.community_id as string}
-                  href={`/communities/${community.slug}`}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-secondary transition-colors"
-                >
-                  {imgSrc ? (
-                    <img src={imgSrc} alt="" className="h-8 w-8 rounded-lg object-cover" />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-xs font-bold text-primary">
-                      {community.name[0]}
-                    </div>
-                  )}
-                  <span className="text-sm text-foreground">{community.name}</span>
-                </a>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
-  )
+  );
 }
