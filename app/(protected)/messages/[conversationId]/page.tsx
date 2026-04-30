@@ -43,26 +43,19 @@ export default function ConversationPage() {
       if (!user) return
       setUserId(user.id)
 
-      // Find partner from dm_participants
-      const { data: participants } = await supabase
-        .from('dm_participants')
-        .select('user_id')
-        .eq('conversation_id', conversationId)
-
-      const partnerId = participants?.find((p) => p.user_id !== user.id)?.user_id
-      if (partnerId) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .eq('id', partnerId)
-          .single()
-        if (profile) setPartner(profile)
+      // Partner resolution: dm_participants RLS only exposes the caller's row,
+      // so fetch partner via a server route that uses service role safely.
+      const partnerRes = await fetch(`/api/dm/${conversationId}/partner`)
+      const partnerData = await partnerRes.json().catch(() => null)
+      if (partnerRes.ok && partnerData?.id) {
+        const p = partnerData as PartnerInfo
+        setPartner(p)
 
         // Check friendship status
         const { data: friendship } = await supabase
           .from('friendships')
           .select('status, requester_id')
-          .or(`and(requester_id.eq.${user.id},addressee_id.eq.${partnerId}),and(requester_id.eq.${partnerId},addressee_id.eq.${user.id})`)
+          .or(`and(requester_id.eq.${user.id},addressee_id.eq.${p.id}),and(requester_id.eq.${p.id},addressee_id.eq.${user.id})`)
           .maybeSingle()
         if (friendship) setFriendStatus(friendship.status as 'pending' | 'accepted' | 'blocked')
       }

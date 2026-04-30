@@ -20,8 +20,16 @@ export async function GET() {
 
   const convoIds = participations.map((p) => p.conversation_id)
 
-  // Get all participants for those conversations to find the partner
-  const { data: allParticipants } = await supabase
+  // Use service role to read all participants (RLS otherwise only shows the caller's row).
+  let admin
+  try {
+    admin = createAdminClient()
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Admin client unavailable'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+
+  const { data: allParticipants } = await admin
     .from('dm_participants')
     .select('conversation_id, user_id')
     .in('conversation_id', convoIds)
@@ -38,7 +46,7 @@ export async function GET() {
   let profiles: Record<string, { id: string; username: string; display_name: string | null; avatar_url: string | null }> = {}
 
   if (partnerIds.length > 0) {
-    const { data: profileData } = await supabase
+    const { data: profileData } = await admin
       .from('profiles')
       .select('id, username, display_name, avatar_url')
       .in('id', partnerIds)
@@ -48,7 +56,7 @@ export async function GET() {
   // Get last message for each conversation
   const conversations = []
   for (const convoId of convoIds) {
-    const { data: lastMsg } = await supabase
+    const { data: lastMsg } = await admin
       .from('dm_messages')
       .select('content, created_at')
       .eq('conversation_id', convoId)
@@ -88,25 +96,6 @@ export async function POST(request: Request) {
   if (!partner_id) return NextResponse.json({ error: 'partner_id required' }, { status: 400 })
   if (partner_id === user.id) return NextResponse.json({ error: 'Cannot message yourself' }, { status: 400 })
 
-  // Check if conversation already exists between these two users
-  const { data: myConvos } = await supabase
-    .from('dm_participants')
-    .select('conversation_id')
-    .eq('user_id', user.id)
-
-  if (myConvos && myConvos.length > 0) {
-    const myConvoIds = myConvos.map((c) => c.conversation_id)
-    const { data: partnerInMyConvos } = await supabase
-      .from('dm_participants')
-      .select('conversation_id')
-      .eq('user_id', partner_id)
-      .in('conversation_id', myConvoIds)
-
-    if (partnerInMyConvos && partnerInMyConvos.length > 0) {
-      return NextResponse.json({ id: partnerInMyConvos[0].conversation_id })
-    }
-  }
-
   // Create new conversation + participants with the service role key.
   // This avoids RLS rejecting the second participant row (partner_id).
   let admin
@@ -115,6 +104,29 @@ export async function POST(request: Request) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Admin client unavailable'
     return NextResponse.json({ error: msg }, { status: 500 })
+  }
+
+  // Check if conversation already exists between these two users (service role bypasses dm_participants RLS).
+  const { data: participantRows, error: participantRowsError } = await admin
+    .from('dm_participants')
+    .select('conversation_id, user_id')
+    .in('user_id', [user.id, partner_id])
+
+  if (participantRowsError) {
+    return NextResponse.json({ error: participantRowsError.message }, { status: 500 })
+  }
+
+  const convoToUsers = new Map<string, Set<string>>()
+  for (const row of participantRows ?? []) {
+    const set = convoToUsers.get(row.conversation_id) ?? new Set<string>()
+    set.add(row.user_id)
+    convoToUsers.set(row.conversation_id, set)
+  }
+
+  for (const [conversationId, users] of convoToUsers.entries()) {
+    if (users.has(user.id) && users.has(partner_id)) {
+      return NextResponse.json({ id: conversationId })
+    }
   }
 
   const { data: convo, error: convoError } = await admin
