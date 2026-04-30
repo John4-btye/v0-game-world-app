@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getBannerStyle } from '@/lib/profile/banner-styles';
 
 export default async function ProfilePage() {
@@ -9,11 +10,11 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/auth/login');
-  }
+  if (!user) redirect('/auth/login');
 
-  // Fetch profile
+  // =========================
+  // PROFILE DATA
+  // =========================
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -25,7 +26,21 @@ export default async function ProfilePage() {
   }
 
   // =========================
-  // Banner Logic (FIXED)
+  // LIVE STATS (FIXED)
+  // =========================
+  const { count: friendCount } = await supabase
+    .from('friends')
+    .select('*', { count: 'exact', head: true })
+    .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+    .eq('status', 'accepted');
+
+  const { count: communityCount } = await supabase
+    .from('community_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  // =========================
+  // BANNER
   // =========================
   const bannerUrl = profile.banner_url || null;
   const bannerStyle = getBannerStyle(profile.banner_preset);
@@ -57,7 +72,7 @@ export default async function ProfilePage() {
         {/* Profile Info */}
         <div className="px-6 pb-6 pt-4">
           <div className="flex items-center gap-4">
-            {/* ✅ FIXED AVATAR */}
+            {/* Avatar (FIXED) */}
             <div className="h-16 w-16 overflow-hidden rounded-full bg-primary/20">
               {profile.avatar_url ? (
                 <img
@@ -72,7 +87,7 @@ export default async function ProfilePage() {
               )}
             </div>
 
-            {/* Name + Username */}
+            {/* Name */}
             <div>
               <h2 className="text-lg font-semibold text-foreground">
                 {profile.display_name || 'Unknown User'}
@@ -81,24 +96,28 @@ export default async function ProfilePage() {
                 @{profile.username}
               </p>
 
-              <button className="mt-2 rounded-md bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary/90 transition">
+              {/* FIXED BUTTON */}
+              <Link
+                href="/settings?tab=profile"
+                className="mt-2 inline-block rounded-md bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary/90 transition"
+              >
                 Edit Profile
-              </button>
+              </Link>
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Stats (FIXED) */}
           <div className="mt-6 grid grid-cols-3 gap-4 border-t border-border pt-4 text-sm">
             <div>
               <p className="font-semibold text-foreground">
-                {profile.community_count ?? 0}
+                {communityCount ?? 0}
               </p>
               <p className="text-muted-foreground">Communities</p>
             </div>
 
             <div>
               <p className="font-semibold text-foreground">
-                {profile.friend_count ?? 0}
+                {friendCount ?? 0}
               </p>
               <p className="text-muted-foreground">Friends</p>
             </div>
@@ -156,12 +175,12 @@ export default async function ProfilePage() {
             <p className="text-muted-foreground mb-1">Platforms</p>
             <div className="flex flex-wrap gap-2">
               {(profile.platforms || []).length > 0 ? (
-                profile.platforms.map((platform: string) => (
+                profile.platforms.map((p: string) => (
                   <span
-                    key={platform}
+                    key={p}
                     className="rounded-md bg-secondary px-2 py-1 text-xs"
                   >
-                    {platform}
+                    {p}
                   </span>
                 ))
               ) : (
@@ -172,7 +191,7 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          {/* Active Hours */}
+          {/* Active */}
           <div>
             <p className="text-muted-foreground mb-1">Usually Active</p>
             <span className="rounded-md bg-secondary px-2 py-1 text-xs">
@@ -181,7 +200,6 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Looking for squad */}
         {profile.looking_for_squad && (
           <div className="mt-4 rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm text-primary">
             Looking for squad
