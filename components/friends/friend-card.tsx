@@ -30,6 +30,7 @@ export function FriendCard({
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [removed, setRemoved] = useState(false)
+  const [messageError, setMessageError] = useState<string | null>(null)
 
   const handleAction = async (action: 'accept' | 'block' | 'remove') => {
     setLoading(action)
@@ -52,14 +53,38 @@ export function FriendCard({
 
   const handleMessage = async () => {
     setLoading('message')
+    setMessageError(null)
     try {
       const res = await fetch('/api/dm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ partner_id: profile.id }),
       })
-      const data = await res.json()
-      if (data.id) router.push(`/messages/${data.id}`)
+      const data = await res.json().catch(() => ({} as any))
+      if (!res.ok) {
+        const msg = (data as any)?.error || 'Failed to start a message'
+        setMessageError(msg)
+        return
+      }
+
+      const conversationId = (data as any)?.id
+      if (typeof conversationId !== 'string' || conversationId.length === 0) {
+        setMessageError('Could not open conversation (missing id)')
+        return
+      }
+
+      router.push(`/messages/${conversationId}`)
+      router.refresh()
+      // Fallback for cases where client navigation is blocked by an overlay/state.
+      setTimeout(() => {
+        try {
+          if (!window.location.pathname.startsWith('/messages/')) {
+            window.location.href = `/messages/${conversationId}`
+          }
+        } catch {
+          // ignore
+        }
+      }, 150)
     } finally {
       setLoading(null)
     }
@@ -84,8 +109,9 @@ export function FriendCard({
   }[onlineStatus]
 
   return (
-    <div className="group flex items-center justify-between rounded-xl border border-border bg-card p-3 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-      <div className="flex items-center gap-3">
+    <div className="group rounded-xl border border-border bg-card p-3 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
         <div className="relative">
           {profile.avatar_url ? (
             <img
@@ -191,6 +217,8 @@ export function FriendCard({
           </button>
         )}
       </div>
+      </div>
+      {messageError && <p className="mt-2 text-xs text-destructive">{messageError}</p>}
     </div>
   )
 }
