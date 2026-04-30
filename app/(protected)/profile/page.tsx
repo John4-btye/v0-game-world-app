@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getGameImage } from '@/lib/game-images';
-import { bannerCssForPreset } from '@/lib/profile-banner';
+import { getBannerClass } from '@/lib/profile/banner-styles';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -15,30 +14,17 @@ export default async function ProfilePage() {
   // -------------------------
   // Fetch profile
   // -------------------------
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single();
 
-  if (profileError || !profile) {
+  if (error || !profile) {
     return <div className="text-muted-foreground">Profile not found</div>;
   }
 
-  const profileRow = profile as Partial<{
-    display_name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-    bio: string | null;
-    favorite_games: unknown;
-    platforms: unknown;
-    play_style: unknown;
-    active_hours: unknown;
-    looking_for_squad: boolean | null;
-    squad_message: string | null;
-    banner_preset: string | null;
-    banner_url: string | null;
-  }>;
+  const profileRow = profile as any;
 
   // -------------------------
   // User metadata
@@ -64,8 +50,6 @@ export default async function ProfilePage() {
 
   const bio = profileRow.bio || null;
 
-  const provider = user.app_metadata?.provider ?? 'unknown';
-
   const createdAt = new Date(user.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -77,9 +61,8 @@ export default async function ProfilePage() {
   // -------------------------
   const { data: memberships } = await supabase
     .from('community_members')
-    .select('community_id, communities(name, slug, icon_url, game_tags)')
-    .eq('user_id', user.id)
-    .limit(10);
+    .select('community_id, communities(name)')
+    .eq('user_id', user.id);
 
   // -------------------------
   // Friend count
@@ -91,47 +74,18 @@ export default async function ProfilePage() {
     .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
 
   // -------------------------
-  // Favorite games logic
+  // Gamer identity fields
   // -------------------------
-  const gameTagsFromCommunities: string[] = [];
-
-  memberships?.forEach((m: any) => {
-    const comm = m.communities;
-    if (comm?.game_tags) {
-      gameTagsFromCommunities.push(...comm.game_tags);
-    }
-  });
-
-  const favoriteGamesFromProfile = Array.isArray(profileRow.favorite_games)
-    ? profileRow.favorite_games.filter(
-        (g): g is string => typeof g === 'string'
-      )
-    : [];
-
-  const favoriteGames =
-    favoriteGamesFromProfile.length > 0
-      ? favoriteGamesFromProfile
-      : [...new Set(gameTagsFromCommunities)].slice(0, 5);
-
-  const platforms = Array.isArray(profileRow.platforms)
-    ? profileRow.platforms.filter((p): p is string => typeof p === 'string')
-    : [];
-
-  const playStyle =
-    typeof profileRow.play_style === 'string'
-      ? profileRow.play_style
-      : 'casual';
-
-  const activeHours =
-    typeof profileRow.active_hours === 'string'
-      ? profileRow.active_hours
-      : 'flexible';
+  const favoriteGames = profileRow.favorite_games ?? [];
+  const platforms = profileRow.platforms ?? [];
+  const playStyle = profileRow.play_style ?? 'casual';
+  const activeHours = profileRow.active_hours ?? 'flexible';
 
   // -------------------------
-  // Banner logic
+  // Banner logic (FIXED)
   // -------------------------
   const bannerUrl = profileRow.banner_url || null;
-  const bannerClass = bannerCssForPreset(profileRow.banner_preset);
+  const bannerClass = getBannerClass(profileRow.banner_preset);
 
   // -------------------------
   // Render
@@ -157,7 +111,7 @@ export default async function ProfilePage() {
               : undefined
           }
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/45" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/40" />
         </div>
 
         {/* Profile Content */}
@@ -166,7 +120,7 @@ export default async function ProfilePage() {
             {avatarUrl ? (
               <img
                 src={avatarUrl}
-                alt={`${displayName}'s avatar`}
+                alt="avatar"
                 className="h-20 w-20 rounded-full border-2 border-primary/30 bg-card object-cover"
               />
             ) : (
@@ -223,7 +177,7 @@ export default async function ProfilePage() {
 
             {favoriteGames.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
-                {favoriteGames.map((game) => (
+                {favoriteGames.map((game: string) => (
                   <span
                     key={game}
                     className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary"
@@ -234,7 +188,7 @@ export default async function ProfilePage() {
               </div>
             ) : (
               <p className="text-xs italic text-muted-foreground">
-                Join communities to show your favorite games
+                No games selected
               </p>
             )}
           </div>
@@ -242,7 +196,7 @@ export default async function ProfilePage() {
           {/* Play Style */}
           <div>
             <p className="mb-2 text-xs text-muted-foreground">Play Style</p>
-            <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs text-blue-500">
+            <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs text-blue-500 capitalize">
               {playStyle}
             </span>
           </div>
@@ -252,7 +206,7 @@ export default async function ProfilePage() {
             <div>
               <p className="mb-2 text-xs text-muted-foreground">Platforms</p>
               <div className="flex flex-wrap gap-2">
-                {platforms.map((p) => (
+                {platforms.map((p: string) => (
                   <span
                     key={p}
                     className="rounded-full bg-secondary px-2 py-1 text-xs"
