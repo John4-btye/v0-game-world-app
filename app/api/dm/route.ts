@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 // GET: List all DM conversations for the current user
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
 
   const { partner_id } = await request.json()
   if (!partner_id) return NextResponse.json({ error: 'partner_id required' }, { status: 400 })
+  if (partner_id === user.id) return NextResponse.json({ error: 'Cannot message yourself' }, { status: 400 })
 
   // Check if conversation already exists between these two users
   const { data: myConvos } = await supabase
@@ -105,17 +107,26 @@ export async function POST(request: Request) {
     }
   }
 
-  // Create new conversation
-  const { data: convo, error: convoError } = await supabase
+  // Create new conversation + participants with the service role key.
+  // This avoids RLS rejecting the second participant row (partner_id).
+  let admin
+  try {
+    admin = createAdminClient()
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Admin client unavailable'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+
+  const { data: convo, error: convoError } = await admin
     .from('dm_conversations')
     .insert({})
-    .select()
+    .select('id')
     .single()
 
   if (convoError) return NextResponse.json({ error: convoError.message }, { status: 500 })
 
   // Add both participants
-  const { error: partError } = await supabase
+  const { error: partError } = await admin
     .from('dm_participants')
     .insert([
       { conversation_id: convo.id, user_id: user.id },
