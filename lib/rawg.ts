@@ -4,10 +4,14 @@
 // ============================================================
 
 const RAWG_BASE = 'https://api.rawg.io/api'
-const API_KEY = process.env.RAWG_API_KEY || process.env.NEXT_PUBLIC_RAWG_API_KEY
-
-if (!API_KEY) {
-  throw new Error('Missing RAWG_API_KEY (preferred) or NEXT_PUBLIC_RAWG_API_KEY')
+function getApiKey() {
+  // Avoid throwing at module-evaluation time so builds don't fail if the env var
+  // isn't present yet (e.g. Vercel env vars configured after first deploy).
+  const key = process.env.RAWG_API_KEY || process.env.NEXT_PUBLIC_RAWG_API_KEY
+  if (!key) {
+    throw new Error('Missing RAWG_API_KEY (preferred) or NEXT_PUBLIC_RAWG_API_KEY')
+  }
+  return key
 }
 
 export interface RawgGame {
@@ -39,8 +43,9 @@ export async function searchGames(params: {
   page?: number
   page_size?: number
 }): Promise<RawgSearchResponse> {
+  const apiKey = getApiKey()
   const url = new URL(`${RAWG_BASE}/games`)
-  url.searchParams.set('key', API_KEY)
+  url.searchParams.set('key', apiKey)
   url.searchParams.set('page_size', String(params.page_size ?? 20))
   if (params.query) url.searchParams.set('search', params.query)
   if (params.genres) url.searchParams.set('genres', params.genres)
@@ -57,7 +62,8 @@ export async function searchGames(params: {
 
 /** Get a single game by slug */
 export async function getGameBySlug(slug: string): Promise<RawgGame | null> {
-  const res = await fetch(`${RAWG_BASE}/games/${slug}?key=${API_KEY}`, {
+  const apiKey = getApiKey()
+  const res = await fetch(`${RAWG_BASE}/games/${slug}?key=${apiKey}`, {
     next: { revalidate: 3600 },
   })
   if (res.status === 404) return null
