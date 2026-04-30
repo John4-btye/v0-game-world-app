@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get('q')?.trim() ?? ''
   const platform = searchParams.get('platform') ?? ''
   const tag = searchParams.get('tag') ?? ''
+  const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1)
+  const limit = Math.min(
+    50,
+    Math.max(1, Number(searchParams.get('limit') ?? '20') || 20),
+  )
 
   const supabase = await createClient()
 
@@ -24,7 +29,8 @@ export async function GET(request: NextRequest) {
 
   let dbQuery = supabase
     .from('communities')
-    .select(`
+    .select(
+      `
       id,
       name,
       slug,
@@ -42,11 +48,13 @@ export async function GET(request: NextRequest) {
       community_members (
         user_id
       )
-      `)
+      `,
+      { count: 'exact' },
+    )
     .eq('is_nsfw', false)
     .eq('is_deleted', false)
     .order('name', { ascending: true })
-    .limit(50)
+    .range((page - 1) * limit, page * limit - 1)
 
   // Search by name (case-insensitive partial match)
   if (query) {
@@ -63,7 +71,7 @@ export async function GET(request: NextRequest) {
     dbQuery = dbQuery.contains('game_tags', [tag])
   }
 
-  const { data, error } = await dbQuery
+  const { data, error, count } = await dbQuery
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -93,12 +101,21 @@ export async function GET(request: NextRequest) {
       id: community.id,
       name: community.name,
       slug: community.slug,
+      description: community.description,
+      icon_url: community.icon_url,
       game_tags: community.game_tags,
+      platforms: community.platforms,
       member_count,
       last_message,
       last_message_time,
     }
   })
 
-  return NextResponse.json({ communities: enriched })
+  return NextResponse.json({
+    communities: enriched,
+    page,
+    limit,
+    total: count ?? 0,
+    total_pages: Math.max(1, Math.ceil((count ?? 0) / limit)),
+  })
 }

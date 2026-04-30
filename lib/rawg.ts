@@ -4,7 +4,11 @@
 // ============================================================
 
 const RAWG_BASE = 'https://api.rawg.io/api'
-const API_KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY!
+const API_KEY = process.env.RAWG_API_KEY || process.env.NEXT_PUBLIC_RAWG_API_KEY
+
+if (!API_KEY) {
+  throw new Error('Missing RAWG_API_KEY (preferred) or NEXT_PUBLIC_RAWG_API_KEY')
+}
 
 export interface RawgGame {
   id: number

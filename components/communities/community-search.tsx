@@ -3,6 +3,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { CommunitySummary } from '@/lib/types'
 import { CommunityCard } from './community-card'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 
 const PLATFORM_FILTERS = [
   { label: 'All', value: '' },
@@ -36,6 +44,14 @@ export function CommunitySearch() {
   const [tag, setTag] = useState('')
   const [communities, setCommunities] = useState<CommunitySummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const limit = 20
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [query, platform, tag])
 
   const fetchCommunities = useCallback(async () => {
     setLoading(true)
@@ -44,15 +60,19 @@ export function CommunitySearch() {
       if (query) params.set('q', query)
       if (platform) params.set('platform', platform)
       if (tag) params.set('tag', tag)
+      params.set('page', String(page))
+      params.set('limit', String(limit))
       const res = await fetch(`/api/communities?${params.toString()}`)
       const data = await res.json()
       setCommunities(data.communities ?? [])
+      setTotalPages(Number(data.total_pages ?? 1) || 1)
     } catch {
       setCommunities([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
-  }, [query, platform, tag])
+  }, [query, platform, tag, page])
 
   useEffect(() => {
     const timeout = setTimeout(fetchCommunities, 300)
@@ -150,9 +170,48 @@ export function CommunitySearch() {
       )}
 
       {!loading && communities.length > 0 && (
-        <p className="text-xs text-muted-foreground/60">
-          Showing {communities.length} communit{communities.length === 1 ? 'y' : 'ies'}
-        </p>
+        <div className="flex flex-col gap-3">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setPage((p) => Math.max(1, p - 1))
+                  }}
+                  className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+
+              <PaginationItem>
+                <PaginationLink
+                  href="#"
+                  isActive
+                  onClick={(e) => e.preventDefault()}
+                  size="default"
+                >
+                  Page {page} / {totalPages}
+                </PaginationLink>
+              </PaginationItem>
+
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setPage((p) => Math.min(totalPages, p + 1))
+                  }}
+                  className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+
+          <p className="text-xs text-muted-foreground/60">
+            Showing {communities.length} communit{communities.length === 1 ? 'y' : 'ies'} (20 per page)
+          </p>
+        </div>
       )}
     </div>
   )
