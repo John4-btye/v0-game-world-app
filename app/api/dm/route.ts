@@ -77,13 +77,30 @@ export async function GET() {
   }
 
   // Sort by most recent message
-  conversations.sort((a, b) => {
-    const aTime = a.last_message?.created_at ?? '0'
-    const bTime = b.last_message?.created_at ?? '0'
-    return bTime.localeCompare(aTime)
-  })
+  const getSortTime = (c: any) => c.last_message?.created_at ?? '0'
 
-  return NextResponse.json(conversations)
+  // Dedupe: if multiple conversations exist with the same partner, show only
+  // the one with the most recent activity.
+  const byPartnerId = new Map<string, any>()
+  for (const convo of conversations) {
+    const partnerId = convo.partner?.id
+    if (!partnerId) continue
+    const existing = byPartnerId.get(partnerId)
+    if (!existing) {
+      byPartnerId.set(partnerId, convo)
+      continue
+    }
+    const existingTime = getSortTime(existing)
+    const nextTime = getSortTime(convo)
+    if (nextTime.localeCompare(existingTime) > 0) {
+      byPartnerId.set(partnerId, convo)
+    }
+  }
+
+  const deduped = Array.from(byPartnerId.values())
+  deduped.sort((a, b) => getSortTime(b).localeCompare(getSortTime(a)))
+
+  return NextResponse.json(deduped)
 }
 
 // POST: Create or find an existing DM conversation with a partner
