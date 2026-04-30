@@ -24,7 +24,9 @@ export default async function ProfilePage() {
     return <div className="p-6 text-muted-foreground">Profile not found.</div>;
   }
 
-  // Banner logic (FIXED)
+  // =========================
+  // Banner Logic (FIXED)
+  // =========================
   const bannerUrl = profile.banner_url || null;
   const bannerStyle = getBannerStyle(profile.banner_preset);
 
@@ -36,7 +38,7 @@ export default async function ProfilePage() {
       <section className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Banner */}
         <div
-          className="relative h-28 w-full"
+          className="relative h-32 w-full"
           style={
             bannerUrl
               ? {
@@ -55,12 +57,22 @@ export default async function ProfilePage() {
         {/* Profile Info */}
         <div className="px-6 pb-6 pt-4">
           <div className="flex items-center gap-4">
-            {/* Avatar */}
-            <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-xl font-bold text-primary">
-              {profile.display_name?.[0] || 'U'}
+            {/* ✅ FIXED AVATAR */}
+            <div className="h-16 w-16 overflow-hidden rounded-full bg-primary/20">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="avatar"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl font-bold text-primary">
+                  {profile.display_name?.[0] || 'U'}
+                </div>
+              )}
             </div>
 
-            {/* Name */}
+            {/* Name + Username */}
             <div>
               <h2 className="text-lg font-semibold text-foreground">
                 {profile.display_name || 'Unknown User'}
@@ -143,14 +155,20 @@ export default async function ProfilePage() {
           <div>
             <p className="text-muted-foreground mb-1">Platforms</p>
             <div className="flex flex-wrap gap-2">
-              {(profile.platforms || []).map((platform: string) => (
-                <span
-                  key={platform}
-                  className="rounded-md bg-secondary px-2 py-1 text-xs"
-                >
-                  {platform}
+              {(profile.platforms || []).length > 0 ? (
+                profile.platforms.map((platform: string) => (
+                  <span
+                    key={platform}
+                    className="rounded-md bg-secondary px-2 py-1 text-xs"
+                  >
+                    {platform}
+                  </span>
+                ))
+              ) : (
+                <span className="text-muted-foreground text-xs">
+                  None selected
                 </span>
-              ))}
+              )}
             </div>
           </div>
 
